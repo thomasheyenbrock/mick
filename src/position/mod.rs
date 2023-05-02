@@ -496,7 +496,8 @@ impl Position {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::Board, castle::CastlingRights, piece::Piece, position::Position, side::Side,
+        board::Board, castle::CastlingRights, piece::Piece, position::Position, r#move::Move,
+        side::Side, square::Square,
     };
 
     #[test]
@@ -598,5 +599,101 @@ mod tests {
                 hash: 15169217504194791061
             }
         );
+    }
+
+    #[test]
+    fn single_pawn_push() {
+        let mut position = Position::from_fen(Position::STARTING);
+        position.make(&Move::new_push(&Square::new(8), &Square::new(16)));
+        assert_eq!(
+            position,
+            Position::new(
+                [
+                    Piece::WHITE_ROOK,
+                    Piece::WHITE_KNIGHT,
+                    Piece::WHITE_BISHOP,
+                    Piece::WHITE_QUEEN,
+                    Piece::WHITE_KING,
+                    Piece::WHITE_BISHOP,
+                    Piece::WHITE_KNIGHT,
+                    Piece::WHITE_ROOK,
+                    Piece::NONE,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::WHITE_PAWN,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::NONE,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_PAWN,
+                    Piece::BLACK_ROOK,
+                    Piece::BLACK_KNIGHT,
+                    Piece::BLACK_BISHOP,
+                    Piece::BLACK_QUEEN,
+                    Piece::BLACK_KING,
+                    Piece::BLACK_BISHOP,
+                    Piece::BLACK_KNIGHT,
+                    Piece::BLACK_ROOK,
+                ],
+                [
+                    Board::new(0x0000_0000_0000_0010),
+                    Board::new(0x1000_0000_0000_0000),
+                    Board::new(0x0000_0000_0000_0008),
+                    Board::new(0x0800_0000_0000_0000),
+                    Board::new(0x0000_0000_0000_0081),
+                    Board::new(0x8100_0000_0000_0000),
+                    Board::new(0x0000_0000_0000_0024),
+                    Board::new(0x2400_0000_0000_0000),
+                    Board::new(0x0000_0000_0000_0042),
+                    Board::new(0x4200_0000_0000_0000),
+                    Board::new(0x0000_0000_0001_FE00),
+                    Board::new(0x00FF_0000_0000_0000),
+                ],
+                Side::BLACK,
+                CastlingRights::ALL_RIGHTS,
+                None,
+                0,
+                1
+            )
+        )
     }
 }
