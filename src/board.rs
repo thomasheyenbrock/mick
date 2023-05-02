@@ -229,7 +229,7 @@ impl BitXor for Board {
     }
 }
 
-const GRID_FILES: &str = "    A    B    C    D    E    F    G    H";
+const GRID_FILES: &str = "    A   B   C   D   E   F   G   H";
 const GRID_TOP: &str = "  ┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
 const GRID_MIDDLE: &str = "  ├───┼───┼───┼───┼───┼───┼───┼───┤\n";
 const GRID_BOTTOM: &str = "  └───┴───┴───┴───┴───┴───┴───┴───┘\n";
