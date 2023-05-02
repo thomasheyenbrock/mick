@@ -1,3 +1,5 @@
+#![feature(int_roundings)]
+
 mod board;
 mod castling_rights;
 mod r#move;

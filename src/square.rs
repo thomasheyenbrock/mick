@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::board::{Board, DIAGONAL_RAYS, SQUARES_BETWEEN, STRAIGHT_RAYS};
+use crate::board::{Board, DIAGONAL_RAYS, FILES, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS};
 
 static SQUARES: [&str; 64] = [
     "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8",
@@ -21,16 +21,32 @@ impl Square {
         DIAGONAL_RAYS[self.0 as usize]
     }
 
-    pub fn file(&self) -> usize {
+    pub fn file(&self) -> Board {
+        FILES[self.0 as usize]
+    }
+
+    pub fn file_index(&self) -> usize {
         (self.0 % 8) as usize
+    }
+
+    pub fn lines_along(&self, rhs: &Self) -> Board {
+        LINES_ALONG[self.0 as usize][rhs.0 as usize]
     }
 
     pub fn new(index: u8) -> Self {
         Self(index)
     }
 
+    pub fn rank_index(&self) -> usize {
+        self.0.div_floor(8) as usize
+    }
+
     pub fn straight_rays(&self) -> Board {
         STRAIGHT_RAYS[self.0 as usize]
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        self.0
     }
 
     pub fn to_usize(&self) -> usize {
@@ -60,12 +76,12 @@ mod tests {
 
     #[test]
     fn try_from_valid() {
-        assert_eq!(Square::try_from_str("a1"), Ok(Square::new(0)));
-        assert_eq!(Square::try_from_str("a2"), Ok(Square::new(1)));
-        assert_eq!(Square::try_from_str("a8"), Ok(Square::new(7)));
-        assert_eq!(Square::try_from_str("d4"), Ok(Square::new(27)));
-        assert_eq!(Square::try_from_str("h1"), Ok(Square::new(56)));
-        assert_eq!(Square::try_from_str("h8"), Ok(Square::new(63)));
+        assert_eq!(Square::try_from_str("a1"), Ok(Square(0)));
+        assert_eq!(Square::try_from_str("a2"), Ok(Square(1)));
+        assert_eq!(Square::try_from_str("a8"), Ok(Square(7)));
+        assert_eq!(Square::try_from_str("d4"), Ok(Square(27)));
+        assert_eq!(Square::try_from_str("h1"), Ok(Square(56)));
+        assert_eq!(Square::try_from_str("h8"), Ok(Square(63)));
     }
 
     #[test]

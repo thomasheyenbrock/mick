@@ -849,7 +849,7 @@ impl Zorbist {
         };
         let castling_rights = self.castling_rights[castling_rights.to_usize()];
         let en_passant_target =
-            if let Some(file) = en_passant_target.as_ref().map(|square| square.file()) {
+            if let Some(file) = en_passant_target.as_ref().map(|square| square.file_index()) {
                 self.en_passant_target[file]
             } else {
                 0
@@ -858,7 +858,7 @@ impl Zorbist {
         let mut hash = side_to_mode ^ castling_rights ^ en_passant_target;
 
         for (piece, board) in piece_boards.iter().enumerate() {
-            for square in board.iter() {
+            for (_, square) in board.iter() {
                 hash ^= self.piece_boards[piece][square.to_usize()]
             }
         }

@@ -73,9 +73,182 @@ impl Position {
 
     pub fn legal_moves(&self) -> Vec<Move> {
         // TODO: find out the best value for capacity with benchmarks
-        let legal_moves = Vec::<Move>::with_capacity(60);
+        let mut legal_moves = Vec::<Move>::with_capacity(60);
 
-        let (_attacked, _checkers, _pinned, _pinners) = self.metadata();
+        let (attacked, checkers, pinned, pinners) = self.metadata();
+        let empty_squares = !(self.side_boards[0] | self.side_boards[1]);
+
+        // Opponent pieces
+        let mut capture_mask = self.side_boards[(!self.side_to_move).to_usize()];
+        // Empty squares
+        let mut push_mask = empty_squares;
+        let not_attacked = !attacked;
+
+        // King moves
+        let king = self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+        let king_square = king.to_square();
+        let king_moves = king.king_attacks();
+        for (_, to) in (king_moves & capture_mask & not_attacked).iter() {
+            legal_moves.push(Move::new_capture(&king_square, &to));
+        }
+        for (_, to) in (king_moves & push_mask & not_attacked).iter() {
+            legal_moves.push(Move::new_capture(&king_square, &to));
+        }
+
+        match checkers.occupied() {
+            0 => {
+                // No checks
+            }
+            1 => {
+                // King is in check once, so other piece moves would need to capture the attacker or block the check
+                capture_mask = checkers;
+
+                let checker_square = checkers.to_square();
+
+                let queen =
+                    self.piece_boards[PieceKind::QUEEN.to_piece(&!self.side_to_move).to_usize()];
+                let rook =
+                    self.piece_boards[PieceKind::ROOK.to_piece(&!self.side_to_move).to_usize()];
+                let bishop =
+                    self.piece_boards[PieceKind::BISHOP.to_piece(&!self.side_to_move).to_usize()];
+                let sliders = queen | rook | bishop;
+
+                if sliders & checkers == Board::EMPTY {
+                    // King is checked by a knight or pawn which can't be blocked
+                    push_mask = Board::EMPTY;
+                } else {
+                    push_mask = king_square.between(&checker_square);
+                }
+            }
+            _ => {
+                // King is in double-check, so the only legal moves are king moves
+                return legal_moves;
+            }
+        }
+
+        // Slider moves
+        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&self.side_to_move).to_usize()];
+        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&self.side_to_move).to_usize()];
+        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&self.side_to_move).to_usize()];
+
+        // Non-pinned straight sliders
+        for (from_board, from) in ((queen | rook) & !pinned).iter() {
+            let attacks = from_board.straight_attacks(&empty_squares);
+            for (_, to) in (attacks & capture_mask).iter() {
+                legal_moves.push(Move::new_capture(&from, &to));
+            }
+            for (_, to) in (attacks & push_mask).iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
+        }
+
+        // Pinned straight sliders
+        for (from_board, from) in ((queen | rook) & pinned).iter() {
+            let attacks =
+                from_board.straight_attacks(&empty_squares) & from.lines_along(&king_square);
+            for (_, to) in (attacks & capture_mask).iter() {
+                legal_moves.push(Move::new_capture(&from, &to));
+            }
+            for (_, to) in (attacks & push_mask).iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
+        }
+
+        // Non-pinned diagonal sliders
+        for (from_board, from) in ((queen | bishop) & !pinned).iter() {
+            let attacks = from_board.diagonal_attacks(&empty_squares);
+            for (_, to) in (attacks & capture_mask).iter() {
+                legal_moves.push(Move::new_capture(&from, &to));
+            }
+            for (_, to) in (attacks & push_mask).iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
+        }
+
+        // Pinned diagonal sliders
+        for (from_board, from) in ((queen | rook) & pinned).iter() {
+            let attacks =
+                from_board.diagonal_attacks(&empty_squares) & from.lines_along(&king_square);
+            for (_, to) in (attacks & capture_mask).iter() {
+                legal_moves.push(Move::new_capture(&from, &to));
+            }
+            for (_, to) in (attacks & push_mask).iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
+        }
+
+        // Knight moves (pinned knights can't move)
+        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&self.side_to_move).to_usize()];
+        for (from_board, from) in (knight & !pinned).iter() {
+            let attacks = from_board.knight_attacks();
+            for (_, to) in (attacks & capture_mask).iter() {
+                legal_moves.push(Move::new_capture(&from, &to));
+            }
+            for (_, to) in (attacks & push_mask).iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
+        }
+
+        // Pawn moves
+        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).to_usize()];
+        let (rotate, double_push_rank_index, promotion_rank_index) =
+            if self.side_to_move == Side::WHITE {
+                (8, 3, 7)
+            } else {
+                (56, 4, 0)
+            };
+
+        // Non-pinned pawns
+        for (from_board, from) in (pawn & !pinned).iter() {
+            // Single pushes
+            let single_push = from_board.rotate_left(rotate) & push_mask;
+            let single_push_square = single_push.to_square();
+            if single_push_square.rank_index() == promotion_rank_index {
+                // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
+                legal_moves.append(&mut Move::new_push_promotion(&from, &single_push_square));
+            } else {
+                legal_moves.push(Move::new_push(&from, &single_push_square));
+            }
+
+            // Double pushes
+            let double_push = (single_push.rotate_left(rotate) & push_mask).to_square();
+            if double_push.rank_index() == double_push_rank_index {
+                legal_moves.push(Move::new_push(&from, &double_push));
+            }
+
+            // Captures
+            for (_, to) in (from_board.pawn_attacks(&self.side_to_move) & capture_mask).iter() {
+                if to.rank_index() == promotion_rank_index {
+                    // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
+                    legal_moves.append(&mut Move::new_capture_promotion(&from, &to));
+                } else {
+                    legal_moves.push(Move::new_capture(&from, &to));
+                }
+            }
+        }
+
+        let pinned_pawns = pawn & pinned;
+
+        // Pinned pawns on the same file as the king can porentially be pushed (but never promoted)
+        for (from_board, from) in (pinned_pawns & king_square.file()).iter() {
+            let single_push = from_board.rotate_left(rotate) & push_mask;
+            legal_moves.push(Move::new_push(&from, &single_push.to_square()));
+
+            let double_push = (single_push.rotate_left(rotate) & push_mask).to_square();
+            if double_push.rank_index() == double_push_rank_index {
+                legal_moves.push(Move::new_push(&from, &double_push));
+            }
+        }
+
+        // Pinned pawns on the same diagonal as the king can only porentially capture the pinner
+        let diagonals = king_square.diagonal_rays();
+        for (from_board, from) in (pinned_pawns & diagonals).iter() {
+            for (_, to) in
+                (from_board.pawn_attacks(&self.side_to_move) & diagonals & capture_mask).iter()
+            {
+                legal_moves.push(Move::new_capture(&from, &to))
+            }
+        }
 
         legal_moves
     }
@@ -112,7 +285,7 @@ impl Position {
         let mut pinned = Board::EMPTY;
         let mut pinners = Board::EMPTY;
 
-        for square in potential_attackers.iter() {
+        for (_, square) in potential_attackers.iter() {
             let between = square.between(&king_square);
 
             if between & self.side_boards[opponent.to_usize()] != Board::EMPTY {
