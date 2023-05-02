@@ -85,7 +85,7 @@ impl Position {
             &self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
 
         let occupied = &self.side_boards[0] | &self.side_boards[1];
-        let empty = &!(&self.side_boards[0] | &self.side_boards[1]) ^ friendly_king;
+        let empty_squares = &!(&self.side_boards[0] | &self.side_boards[1]) ^ friendly_king;
         let opponent = !&self.side_to_move;
 
         let king = &self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
@@ -99,8 +99,8 @@ impl Position {
         let diagonal = queen | bishop;
 
         let attacked = king.king_attacks()
-            | straight.straight_attacks(&empty)
-            | diagonal.diagonal_attacks(&empty)
+            | straight.straight_attacks(&empty_squares)
+            | diagonal.diagonal_attacks(&empty_squares)
             | knight.knight_attacks()
             | pawn.pawn_attacks(&self.side_to_move);
 

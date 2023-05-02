@@ -20,15 +20,15 @@ impl Board {
     const NOT_FILE_A: Self = Self(0xFEFE_FEFE_FEFE_FEFE);
     const NOT_FILE_H: Self = Self(0x7F7F_7F7F_7F7F_7F7F);
 
-    pub fn diagonal_attacks(&self, empty: &Self) -> Self {
-        self.north_east_attacks(empty)
-            | self.north_west_attacks(empty)
-            | self.south_east_attacks(empty)
-            | self.south_west_attacks(empty)
+    pub fn diagonal_attacks(&self, empty_squares: &Self) -> Self {
+        self.north_east_attacks(empty_squares)
+            | self.north_west_attacks(empty_squares)
+            | self.south_east_attacks(empty_squares)
+            | self.south_west_attacks(empty_squares)
     }
 
-    pub fn east_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_A.0;
+    pub fn east_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
         let mut gen = self.0;
 
         gen |= prop & (gen << 1);
@@ -76,8 +76,8 @@ impl Board {
         Self(i)
     }
 
-    pub fn north_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0;
+    pub fn north_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0;
         let mut gen = self.0;
 
         gen |= prop & (gen << 8);
@@ -89,8 +89,8 @@ impl Board {
         Self(gen << 8)
     }
 
-    pub fn north_east_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_A.0;
+    pub fn north_east_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
         let mut gen = self.0;
 
         gen |= prop & (gen << 9);
@@ -102,8 +102,8 @@ impl Board {
         Self((gen << 9) & Self::NOT_FILE_A.0)
     }
 
-    pub fn north_west_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_H.0;
+    pub fn north_west_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
         let mut gen = self.0;
 
         gen |= prop & (gen << 7);
@@ -131,8 +131,8 @@ impl Board {
         }
     }
 
-    pub fn south_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0;
+    pub fn south_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0;
         let mut gen = self.0;
 
         gen |= prop & (gen >> 8);
@@ -144,8 +144,8 @@ impl Board {
         Self(gen >> 8)
     }
 
-    pub fn south_east_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_A.0;
+    pub fn south_east_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
         let mut gen = self.0;
 
         gen |= prop & (gen >> 7);
@@ -157,8 +157,8 @@ impl Board {
         Self((gen >> 7) & Self::NOT_FILE_A.0)
     }
 
-    pub fn south_west_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_H.0;
+    pub fn south_west_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
         let mut gen = self.0;
 
         gen |= prop & (gen >> 9);
@@ -170,11 +170,11 @@ impl Board {
         Self((gen >> 9) & Self::NOT_FILE_H.0)
     }
 
-    pub fn straight_attacks(&self, empty: &Self) -> Self {
-        self.north_attacks(empty)
-            | self.south_attacks(empty)
-            | self.east_attacks(empty)
-            | self.west_attacks(empty)
+    pub fn straight_attacks(&self, empty_squares: &Self) -> Self {
+        self.north_attacks(empty_squares)
+            | self.south_attacks(empty_squares)
+            | self.east_attacks(empty_squares)
+            | self.west_attacks(empty_squares)
     }
 
     pub fn to_square(&self) -> Square {
@@ -185,8 +185,8 @@ impl Board {
         self.0
     }
 
-    pub fn west_attacks(&self, empty: &Self) -> Self {
-        let mut prop = empty.0 & Self::NOT_FILE_H.0;
+    pub fn west_attacks(&self, empty_squares: &Self) -> Self {
+        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
         let mut gen = self.0;
 
         gen |= prop & (gen >> 1);
