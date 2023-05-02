@@ -1,21 +1,26 @@
 use crate::side::Side;
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Piece(u8);
 
 impl Piece {
-    const WHITE_KING: Self = Self(0);
-    const BLACK_KING: Self = Self(1);
-    const WHITE_QUEEN: Self = Self(2);
-    const BLACK_QUEEN: Self = Self(3);
-    const WHITE_ROOK: Self = Self(4);
-    const BLACK_ROOK: Self = Self(5);
-    const WHITE_BISHOP: Self = Self(6);
-    const BLACK_BISHOP: Self = Self(7);
-    const WHITE_KNIGHT: Self = Self(8);
-    const BLACK_KNIGHT: Self = Self(9);
-    const WHITE_PAWN: Self = Self(10);
-    const BLACK_PAWN: Self = Self(11);
+    pub const WHITE_KING: Self = Self(0);
+    pub const BLACK_KING: Self = Self(1);
+    pub const WHITE_QUEEN: Self = Self(2);
+    pub const BLACK_QUEEN: Self = Self(3);
+    pub const WHITE_ROOK: Self = Self(4);
+    pub const BLACK_ROOK: Self = Self(5);
+    pub const WHITE_BISHOP: Self = Self(6);
+    pub const BLACK_BISHOP: Self = Self(7);
+    pub const WHITE_KNIGHT: Self = Self(8);
+    pub const BLACK_KNIGHT: Self = Self(9);
+    pub const WHITE_PAWN: Self = Self(10);
+    pub const BLACK_PAWN: Self = Self(11);
+    pub const NONE: Self = Self(12);
+
+    pub fn is_some(&self) -> bool {
+        self.0 <= 11
+    }
 
     pub fn to_usize(&self) -> usize {
         self.0 as usize

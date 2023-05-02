@@ -1,6 +1,6 @@
 use std::ops::Not;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Side(u8);
 
 impl Side {

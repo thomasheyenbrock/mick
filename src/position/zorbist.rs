@@ -1,9 +1,9 @@
-use crate::{board::Board, castling_rights::CastlingRights, side::Side, square::Square};
+use crate::{board::Board, castle::CastlingRights, piece::Piece, side::Side, square::Square};
 
 pub struct Zorbist {
     piece_boards: [[u64; 64]; 12],
     side_to_move: u64,
-    castling_rights: [u64; 16],
+    castling_rights: [u64; 4],
     en_passant_target: [u64; 8],
 }
 
@@ -810,6 +810,8 @@ impl Zorbist {
             1407692895529808991,
             8017416733058094342,
             17174161043994964909,
+        ],
+        en_passant_target: [
             14010261613684750750,
             6749265715182960658,
             17201436012504997405,
@@ -818,20 +820,6 @@ impl Zorbist {
             9977899019142877944,
             6584548094983903006,
             11901552865359661386,
-            13384647352087957342,
-            6655747569867824196,
-            13705265583141900721,
-            761158951579815276,
-        ],
-        en_passant_target: [
-            81219621786405762,
-            17034661209676531226,
-            10220277138238756656,
-            12084541879564429561,
-            9813363965369853949,
-            18037792549846369496,
-            13233332059395281206,
-            7008673347836694607,
         ],
     };
 
@@ -847,7 +835,9 @@ impl Zorbist {
         } else {
             self.side_to_move
         };
-        let castling_rights = self.castling_rights[castling_rights.to_usize()];
+        let castling_rights = castling_rights
+            .iter()
+            .fold(0, |acc, castle| acc ^ self.castling_rights[castle]);
         let en_passant_target =
             if let Some(file) = en_passant_target.as_ref().map(|square| square.file_index()) {
                 self.en_passant_target[file]
@@ -864,5 +854,23 @@ impl Zorbist {
         }
 
         hash
+    }
+
+    pub fn toggle_castling_rights(&self, hash: u64, castling_rights: &CastlingRights) -> u64 {
+        hash ^ castling_rights
+            .iter()
+            .fold(0, |acc, castle| acc ^ self.castling_rights[castle])
+    }
+
+    pub fn toggle_en_passant_target(&self, hash: u64, en_passant_target: &Square) -> u64 {
+        hash ^ self.en_passant_target[en_passant_target.file_index()]
+    }
+
+    pub fn toggle_piece(&self, hash: u64, piece: &Piece, square: &Square) -> u64 {
+        hash ^ self.piece_boards[piece.to_usize()][square.to_usize()]
+    }
+
+    pub fn toggle_side(&self, hash: u64) -> u64 {
+        hash ^ self.side_to_move
     }
 }

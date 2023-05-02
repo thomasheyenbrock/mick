@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::square::Square;
+use crate::{castle::Castle, piece::PieceKind, square::Square};
 
 /// The first two bytes of the first number and the first two bytes of the second number encode metadata about the move
 /// that was performed:
@@ -14,19 +14,21 @@ use crate::square::Square;
 /// - 11 01: Promotion to a bishop with a capture
 /// - 11 10: Promotion to a knight
 /// - 11 11: Promotion to a knight with a capture
-/// - 00 10: Kingside castle
-/// - 01 00: Queenside castle
+/// - 00 10: Double pawn push
+/// - 01 00: Kingside castle
+/// - 01 10: Queenside castle
 /// - 00 00: None of the above (i.e. just a "regular" move)
 ///
 /// These numbers were chosen so that:
 /// - The last bit always indicates if a piece was captured
 /// - The first bit always indicates if the move was a promotion
 /// - Ideally there would be a single byte that always indicates if the move was a castle, but this is impossible
-///   with the previous two statements being true, so we chose the remaining two single-byte numbers instead
+///   with the previous two statements being true. The closest solution is choosing the first bit being zero and
+///   the second bit being one.
+/// - The only remaining number with a trailing zero was chosen to indicate a double pawn push
 ///
 /// The following numbers are missing from the list and thus are invalid:
 /// - 01 01
-/// - 01 10
 /// - 01 11
 #[derive(Debug)]
 pub struct Move(
@@ -37,6 +39,26 @@ pub struct Move(
 );
 
 impl Move {
+    pub fn castle(&self) -> Option<Castle> {
+        if self.0 & 0b11_000000 == 0b01_000000 {
+            Some(Castle::new((self.1 & 0b10_000000) >> 7))
+        } else {
+            None
+        }
+    }
+
+    pub fn from(&self) -> Square {
+        Square::new(self.0 & 0b00_111111)
+    }
+
+    pub fn is_double_pawn_push(&self) -> bool {
+        (self.0 & 0b11_00000 == 0b00_000000) && (self.1 & 0b11_00000 != 0b10_00000)
+    }
+
+    pub fn is_en_passant_capture(&self) -> bool {
+        (self.0 & 0b10_00000 == 0) && (self.1 & 0b11_000000 != 0b11_000000)
+    }
+
     pub fn new_capture(from: &Square, to: &Square) -> Self {
         Self(from.to_u8(), to.to_u8() | 0b01_000000)
     }
@@ -54,6 +76,10 @@ impl Move {
         Self(from.to_u8(), to.to_u8())
     }
 
+    pub fn new_push_double_pawn(from: &Square, to: &Square) -> Self {
+        Self(from.to_u8(), to.to_u8() | 0b10_000000)
+    }
+
     pub fn new_push_promotion(from: &Square, to: &Square) -> Vec<Self> {
         vec![
             Self(from.to_u8() | 0b10_000000, to.to_u8()),
@@ -61,6 +87,24 @@ impl Move {
             Self(from.to_u8() | 0b11_000000, to.to_u8()),
             Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b10_000000),
         ]
+    }
+
+    pub fn promotion_piece_kind(&self) -> Option<PieceKind> {
+        if self.0 & 0b10_000000 == 0 {
+            None
+        } else {
+            match (self.0 & 0b01_000000, self.1 & 0b10_000000) {
+                (0b00_000000, 0b00_000000) => Some(PieceKind::QUEEN),
+                (0b00_000000, 0b10_000000) => Some(PieceKind::ROOK),
+                (0b01_000000, 0b00_000000) => Some(PieceKind::BISHOP),
+                (0b01_000000, 0b10_000000) => Some(PieceKind::KNIGHT),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    pub fn to(&self) -> Square {
+        Square::new(self.1 & 0b00_111111)
     }
 }
 
