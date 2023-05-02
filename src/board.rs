@@ -229,9 +229,33 @@ impl BitXor for Board {
     }
 }
 
+const GRID_FILES: &str = "    A    B    C    D    E    F    G    H";
+const GRID_TOP: &str = "  ┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
+const GRID_MIDDLE: &str = "  ├───┼───┼───┼───┼───┼───┼───┼───┤\n";
+const GRID_BOTTOM: &str = "  └───┴───┴───┴───┴───┴───┴───┴───┘\n";
+
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", "TODO")
+        let mut printed = String::from(GRID_FILES) + "\n" + GRID_TOP;
+        for rank_index in 0..8 {
+            let rank_index = 8 - rank_index;
+            printed += &rank_index.to_string();
+            printed += " ";
+            for file_index in 0..8 {
+                if self.0 & (1 << (8 * (rank_index - 1) + file_index)) == 0 {
+                    printed += "|   ";
+                } else {
+                    printed += "| X ";
+                }
+            }
+            printed += "|\n";
+            printed += if rank_index == 1 {
+                GRID_BOTTOM
+            } else {
+                GRID_MIDDLE
+            }
+        }
+        write!(f, "{}", printed)
     }
 }
 
