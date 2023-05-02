@@ -1,7 +1,12 @@
 mod zorbist;
 
 use crate::{
-    board::Board, castling_rights::CastlingRights, piece::Piece, side::Side, square::Square,
+    board::Board,
+    castling_rights::CastlingRights,
+    piece::{Piece, PieceKind},
+    r#move::Move,
+    side::Side,
+    square::Square,
 };
 
 use self::zorbist::Zorbist;
@@ -9,6 +14,7 @@ use self::zorbist::Zorbist;
 #[derive(Debug, PartialEq)]
 pub struct Position {
     piece_boards: [Board; 12],
+    side_boards: [Board; 2],
     side_to_move: Side,
     castling_rights: CastlingRights,
     en_passant_target: Option<Square>,
@@ -31,7 +37,7 @@ impl Position {
                 if let Ok(piece) = Piece::try_from_char(char) {
                     let board = &mut piece_boards[piece.to_usize()];
                     let square_index = (7 - rank_index) * 8 + file_index;
-                    board.flip(&Square::new(square_index as u8));
+                    board.flip_square(&Square::new(square_index as u8));
                     file_index += 1;
                 } else if let Some(digit) = char.to_digit(10) {
                     file_index += digit as usize;
@@ -65,6 +71,69 @@ impl Position {
         )
     }
 
+    pub fn legal_moves(&self) -> Vec<Move> {
+        // TODO: find out the best value for capacity with benchmarks
+        let legal_moves = Vec::<Move>::with_capacity(60);
+
+        let (_attacked, _checkers, _pinned, _pinners) = self.metadata();
+
+        legal_moves
+    }
+
+    fn metadata(&self) -> (Board, Board, Board, Board) {
+        let occupied = &self.side_boards[0] | &self.side_boards[1];
+        let empty = !(&self.side_boards[0] | &self.side_boards[1]);
+        let opponent = !&self.side_to_move;
+
+        let king = &self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
+        let queen = &self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
+        let rook = &self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
+        let bishop = &self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).to_usize()];
+        let knight = &self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).to_usize()];
+        let pawn = &self.piece_boards[PieceKind::PAWN.to_piece(&opponent).to_usize()];
+
+        let straight = queen | rook;
+        let diagonal = queen | bishop;
+
+        let attacked = king.king_attacks()
+            | straight.straight_attacks(&empty)
+            | diagonal.diagonal_attacks(&empty)
+            | knight.knight_attacks()
+            | pawn.pawn_attacks(&self.side_to_move);
+
+        let king = &self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+        let king_square = king.to_square();
+        let potential_attackers =
+            (&straight & king_square.straight_rays()) | (&diagonal & king_square.diagonal_rays());
+
+        let mut checkers = Board::EMPTY;
+        let mut pinned = Board::EMPTY;
+        let mut pinners = Board::EMPTY;
+
+        for square in potential_attackers.iter() {
+            let between = square.between(&king_square);
+
+            if between & &self.side_boards[opponent.to_usize()] != Board::EMPTY {
+                // There is another opponents piece in between the potential attacker and the king, nothing to do
+            } else if between & &occupied == Board::EMPTY {
+                // No pieces between the attacker and the king
+                checkers.flip_square(&square);
+            } else {
+                let friendly_between = between & &self.side_boards[self.side_to_move.to_usize()];
+                if friendly_between.occupied() == 1 {
+                    // There is exactly one friendly piece between the attacker and the king, so it's pinned
+                    pinned.flip_board(&friendly_between);
+                    pinners.flip_square(&square);
+                }
+            }
+        }
+
+        // Pawns and knights can only be checkers, no pinners
+        checkers |= (&king.knight_attacks() & knight) | (&king.pawn_attacks(&opponent) & pawn);
+
+        (attacked, checkers, pinned, pinners)
+    }
+
     pub fn new(
         piece_boards: [Board; 12],
         side_to_move: Side,
@@ -79,8 +148,15 @@ impl Position {
             &castling_rights,
             &en_passant_target,
         );
+
+        let mut side_boards = [Board::EMPTY; 2];
+        for (i, board) in piece_boards.iter().enumerate() {
+            side_boards[i % 2].flip_board(board);
+        }
+
         Self {
             piece_boards,
+            side_boards,
             side_to_move,
             castling_rights,
             en_passant_target,
@@ -115,6 +191,10 @@ mod tests {
                     Board::new(0x4200_0000_0000_0000),
                     Board::new(0x0000_0000_0000_FF00),
                     Board::new(0x00FF_0000_0000_0000),
+                ],
+                side_boards: [
+                    Board::new(0x0000_0000_0000_FFFF),
+                    Board::new(0xFFFF_0000_0000_0000)
                 ],
                 side_to_move: Side::WHITE,
                 castling_rights: CastlingRights::ALL_RIGHTS,

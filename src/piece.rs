@@ -1,3 +1,5 @@
+use crate::side::Side;
+
 #[derive(Debug, PartialEq)]
 pub struct Piece(u8);
 
@@ -35,6 +37,21 @@ impl Piece {
             'p' => Ok(Self(11)),
             _ => Err(format!("Invalid piece {c}")),
         }
+    }
+}
+
+pub struct PieceKind(u8);
+
+impl PieceKind {
+    pub const KING: Self = Self(0);
+    pub const QUEEN: Self = Self(1);
+    pub const ROOK: Self = Self(2);
+    pub const BISHOP: Self = Self(3);
+    pub const KNIGHT: Self = Self(4);
+    pub const PAWN: Self = Self(5);
+
+    pub fn to_piece(&self, side: &Side) -> Piece {
+        Piece(2 * self.0 + side.to_u8())
     }
 }
 

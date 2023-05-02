@@ -1,5 +1,6 @@
 mod board;
 mod castling_rights;
+mod r#move;
 mod perft;
 mod piece;
 mod position;

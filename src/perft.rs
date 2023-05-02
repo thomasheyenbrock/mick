@@ -1,5 +1,5 @@
 use crate::position::Position;
 
-pub fn perft(_position: Position, _depth: u8) -> u32 {
-    42
+pub fn perft(position: Position, _depth: u8) -> usize {
+    position.legal_moves().len()
 }
