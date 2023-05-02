@@ -38,15 +38,15 @@ pub struct Move(
 
 impl Move {
     pub fn new_capture(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8() & 0b01_000000)
+        Self(from.to_u8(), to.to_u8() | 0b01_000000)
     }
 
     pub fn new_capture_promotion(from: &Square, to: &Square) -> Vec<Self> {
         vec![
-            Self(from.to_u8() & 0b10_000000, to.to_u8() & 0b01_000000),
-            Self(from.to_u8() & 0b10_000000, to.to_u8() & 0b11_000000),
-            Self(from.to_u8() & 0b11_000000, to.to_u8() & 0b01_000000),
-            Self(from.to_u8() & 0b11_000000, to.to_u8() & 0b11_000000),
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b01_000000),
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b11_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b01_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b11_000000),
         ]
     }
 
@@ -56,10 +56,10 @@ impl Move {
 
     pub fn new_push_promotion(from: &Square, to: &Square) -> Vec<Self> {
         vec![
-            Self(from.to_u8() & 0b10_000000, to.to_u8()),
-            Self(from.to_u8() & 0b10_000000, to.to_u8() & 0b10_000000),
-            Self(from.to_u8() & 0b11_000000, to.to_u8()),
-            Self(from.to_u8() & 0b11_000000, to.to_u8() & 0b10_000000),
+            Self(from.to_u8() | 0b10_000000, to.to_u8()),
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b10_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8()),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b10_000000),
         ]
     }
 }
