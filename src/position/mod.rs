@@ -207,18 +207,21 @@ impl Position {
         for (from_board, from) in (pawn & !pinned).iter() {
             // Single pushes
             let single_push = from_board.rotate_left(rotate) & push_mask;
-            let single_push_square = single_push.to_square();
-            if single_push_square.rank_index() == promotion_rank_index {
-                // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
-                legal_moves.append(&mut Move::new_push_promotion(&from, &single_push_square));
-            } else {
-                legal_moves.push(Move::new_push(&from, &single_push_square));
+            for (_, to) in single_push.iter() {
+                if to.rank_index() == promotion_rank_index {
+                    // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
+                    legal_moves.append(&mut Move::new_push_promotion(&from, &to));
+                } else {
+                    legal_moves.push(Move::new_push(&from, &to));
+                }
             }
 
             // Double pushes
-            let double_push = (single_push.rotate_left(rotate) & push_mask).to_square();
-            if double_push.rank_index() == double_push_rank_index {
-                legal_moves.push(Move::new_push_double_pawn(&from, &double_push));
+            let double_push = single_push.rotate_left(rotate) & push_mask;
+            for (_, to) in double_push.iter() {
+                if to.rank_index() == double_push_rank_index {
+                    legal_moves.push(Move::new_push_double_pawn(&from, &to));
+                }
             }
 
             // Captures
@@ -237,11 +240,15 @@ impl Position {
         // Pinned pawns on the same file as the king can porentially be pushed (but never promoted)
         for (from_board, from) in (pinned_pawns & king_square.file()).iter() {
             let single_push = from_board.rotate_left(rotate) & push_mask;
-            legal_moves.push(Move::new_push(&from, &single_push.to_square()));
+            for (_, to) in single_push.iter() {
+                legal_moves.push(Move::new_push(&from, &to));
+            }
 
-            let double_push = (single_push.rotate_left(rotate) & push_mask).to_square();
-            if double_push.rank_index() == double_push_rank_index {
-                legal_moves.push(Move::new_push_double_pawn(&from, &double_push));
+            let double_push = single_push.rotate_left(rotate) & push_mask;
+            for (_, to) in double_push.iter() {
+                if to.rank_index() == double_push_rank_index {
+                    legal_moves.push(Move::new_push_double_pawn(&from, &to));
+                }
             }
         }
 
