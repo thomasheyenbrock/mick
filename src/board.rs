@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{BitAnd, BitOr, BitOrAssign, Not},
+    ops::{BitAnd, BitOr, BitOrAssign, BitXor, Not},
 };
 
 use crate::{side::Side, square::Square};
@@ -234,6 +234,14 @@ impl BitOr for &Board {
 impl BitOrAssign for Board {
     fn bitor_assign(&mut self, rhs: Self) {
         self.0 |= rhs.0;
+    }
+}
+
+impl BitXor for &Board {
+    type Output = Board;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Board(self.0 ^ rhs.0)
     }
 }
 

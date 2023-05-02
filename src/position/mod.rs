@@ -81,8 +81,11 @@ impl Position {
     }
 
     fn metadata(&self) -> (Board, Board, Board, Board) {
+        let friendly_king =
+            &self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+
         let occupied = &self.side_boards[0] | &self.side_boards[1];
-        let empty = !(&self.side_boards[0] | &self.side_boards[1]);
+        let empty = &!(&self.side_boards[0] | &self.side_boards[1]) ^ friendly_king;
         let opponent = !&self.side_to_move;
 
         let king = &self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
@@ -101,8 +104,7 @@ impl Position {
             | knight.knight_attacks()
             | pawn.pawn_attacks(&self.side_to_move);
 
-        let king = &self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
-        let king_square = king.to_square();
+        let king_square = friendly_king.to_square();
         let potential_attackers =
             (&straight & king_square.straight_rays()) | (&diagonal & king_square.diagonal_rays());
 
@@ -129,7 +131,8 @@ impl Position {
         }
 
         // Pawns and knights can only be checkers, no pinners
-        checkers |= (&king.knight_attacks() & knight) | (&king.pawn_attacks(&opponent) & pawn);
+        checkers |= (&friendly_king.knight_attacks() & knight)
+            | (&friendly_king.pawn_attacks(&opponent) & pawn);
 
         (attacked, checkers, pinned, pinners)
     }
