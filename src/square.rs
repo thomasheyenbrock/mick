@@ -13,12 +13,12 @@ static SQUARES: [&str; 64] = [
 pub struct Square(u8);
 
 impl Square {
-    pub fn between(&self, rhs: &Self) -> &Board {
-        &SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
+    pub fn between(&self, rhs: &Self) -> Board {
+        SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
     }
 
-    pub fn diagonal_rays(&self) -> &Board {
-        &DIAGONAL_RAYS[self.0 as usize]
+    pub fn diagonal_rays(&self) -> Board {
+        DIAGONAL_RAYS[self.0 as usize]
     }
 
     pub fn file(&self) -> usize {
@@ -29,8 +29,8 @@ impl Square {
         Self(index)
     }
 
-    pub fn straight_rays(&self) -> &Board {
-        &STRAIGHT_RAYS[self.0 as usize]
+    pub fn straight_rays(&self) -> Board {
+        STRAIGHT_RAYS[self.0 as usize]
     }
 
     pub fn to_usize(&self) -> usize {

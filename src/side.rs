@@ -1,6 +1,6 @@
 use std::ops::Not;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Side(u8);
 
 impl Side {
@@ -24,7 +24,7 @@ impl Side {
     }
 }
 
-impl Not for &Side {
+impl Not for Side {
     type Output = Side;
 
     fn not(self) -> Self::Output {
@@ -50,9 +50,9 @@ mod tests {
 
     #[test]
     fn not() {
-        assert_eq!(!&Side::WHITE, Side::BLACK);
-        assert_eq!(!&Side::BLACK, Side::WHITE);
-        assert_eq!(!&!&Side::WHITE, Side::WHITE);
-        assert_eq!(!&!&Side::BLACK, Side::BLACK);
+        assert_eq!(!Side::WHITE, Side::BLACK);
+        assert_eq!(!Side::BLACK, Side::WHITE);
+        assert_eq!(!!Side::WHITE, Side::WHITE);
+        assert_eq!(!!Side::BLACK, Side::BLACK);
     }
 }

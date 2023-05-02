@@ -5,7 +5,7 @@ use std::{
 
 use crate::{side::Side, square::Square};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Board(u64);
 
 impl Board {
@@ -207,23 +207,7 @@ impl BitAnd for Board {
     }
 }
 
-impl BitAnd for &Board {
-    type Output = Board;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        Board(self.0 & rhs.0)
-    }
-}
-
 impl BitOr for Board {
-    type Output = Board;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        Board(self.0 | rhs.0)
-    }
-}
-
-impl BitOr for &Board {
     type Output = Board;
 
     fn bitor(self, rhs: Self) -> Self::Output {
@@ -237,7 +221,7 @@ impl BitOrAssign for Board {
     }
 }
 
-impl BitXor for &Board {
+impl BitXor for Board {
     type Output = Board;
 
     fn bitxor(self, rhs: Self) -> Self::Output {

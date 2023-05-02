@@ -82,18 +82,18 @@ impl Position {
 
     fn metadata(&self) -> (Board, Board, Board, Board) {
         let friendly_king =
-            &self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+            self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
 
-        let occupied = &self.side_boards[0] | &self.side_boards[1];
-        let empty_squares = &!(&self.side_boards[0] | &self.side_boards[1]) ^ friendly_king;
-        let opponent = !&self.side_to_move;
+        let occupied = self.side_boards[0] | self.side_boards[1];
+        let empty_squares = !(self.side_boards[0] | self.side_boards[1]) ^ friendly_king;
+        let opponent = !self.side_to_move;
 
-        let king = &self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
-        let queen = &self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
-        let rook = &self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
-        let bishop = &self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).to_usize()];
-        let knight = &self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).to_usize()];
-        let pawn = &self.piece_boards[PieceKind::PAWN.to_piece(&opponent).to_usize()];
+        let king = self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
+        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
+        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
+        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).to_usize()];
+        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).to_usize()];
+        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&opponent).to_usize()];
 
         let straight = queen | rook;
         let diagonal = queen | bishop;
@@ -106,7 +106,7 @@ impl Position {
 
         let king_square = friendly_king.to_square();
         let potential_attackers =
-            (&straight & king_square.straight_rays()) | (&diagonal & king_square.diagonal_rays());
+            (straight & king_square.straight_rays()) | (diagonal & king_square.diagonal_rays());
 
         let mut checkers = Board::EMPTY;
         let mut pinned = Board::EMPTY;
@@ -115,13 +115,13 @@ impl Position {
         for square in potential_attackers.iter() {
             let between = square.between(&king_square);
 
-            if between & &self.side_boards[opponent.to_usize()] != Board::EMPTY {
+            if between & self.side_boards[opponent.to_usize()] != Board::EMPTY {
                 // There is another opponents piece in between the potential attacker and the king, nothing to do
-            } else if between & &occupied == Board::EMPTY {
+            } else if between & occupied == Board::EMPTY {
                 // No pieces between the attacker and the king
                 checkers.flip_square(&square);
             } else {
-                let friendly_between = between & &self.side_boards[self.side_to_move.to_usize()];
+                let friendly_between = between & self.side_boards[self.side_to_move.to_usize()];
                 if friendly_between.occupied() == 1 {
                     // There is exactly one friendly piece between the attacker and the king, so it's pinned
                     pinned.flip_board(&friendly_between);
@@ -131,8 +131,8 @@ impl Position {
         }
 
         // Pawns and knights can only be checkers, no pinners
-        checkers |= (&friendly_king.knight_attacks() & knight)
-            | (&friendly_king.pawn_attacks(&opponent) & pawn);
+        checkers |= (friendly_king.knight_attacks() & knight)
+            | (friendly_king.pawn_attacks(&opponent) & pawn);
 
         (attacked, checkers, pinned, pinners)
     }
