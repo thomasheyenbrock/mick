@@ -206,8 +206,8 @@ impl Position {
         // Non-pinned pawns
         for (from_board, from) in (pawn & !pinned).iter() {
             // Single pushes
-            let single_push = from_board.rotate_left(rotate) & push_mask;
-            for (_, to) in single_push.iter() {
+            let single_push = from_board.rotate_left(rotate) & empty_squares;
+            for (_, to) in (single_push & push_mask).iter() {
                 if to.rank_index() == promotion_rank_index {
                     // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
                     legal_moves.append(&mut Move::new_push_promotion(&from, &to));

@@ -1,6 +1,6 @@
 use crate::position::Position;
 
-const DEBUG_DEPTH: u8 = 3;
+const DEBUG_DEPTH: u8 = 0;
 
 pub fn perft(position: &Position, depth: u8) -> usize {
     let moves = position.legal_moves();
