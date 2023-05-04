@@ -57,7 +57,7 @@ impl Board {
         let left = (self.0 >> 1) & Self::NOT_FILE_H.0;
         let side = right | left;
 
-        Self((side << 8) | (side >> 8) | (self.0 << 8) | (self.0 >> 8))
+        Self(side | (side << 8) | (side >> 8) | (self.0 << 8) | (self.0 >> 8))
     }
 
     pub fn knight_attacks(&self) -> Self {
