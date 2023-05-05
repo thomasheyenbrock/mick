@@ -501,10 +501,9 @@ impl Position {
 }
 
 #[cfg(test)]
-mod tests {
+mod from_fen {
     use crate::{
-        board::Board, castle::CastlingRights, piece::Piece, position::Position, r#move::Move,
-        side::Side, square::Square,
+        board::Board, castle::CastlingRights, piece::Piece, position::Position, side::Side,
     };
 
     #[test]
@@ -607,6 +606,14 @@ mod tests {
             }
         );
     }
+}
+
+#[cfg(test)]
+mod make_move {
+    use crate::{
+        board::Board, castle::CastlingRights, piece::Piece, position::Position, r#move::Move,
+        side::Side, square::Square,
+    };
 
     #[test]
     fn single_pawn_push() {
@@ -702,5 +709,203 @@ mod tests {
                 1
             )
         )
+    }
+}
+
+#[cfg(test)]
+mod legal_moves {
+    use crate::position::Position;
+
+    #[test]
+    fn king_moves() {
+        // In the corner
+        let position = Position::from_fen("8/8/8/8/8/8/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3);
+
+        // At the edge of the board
+        let position = Position::from_fen("8/8/8/8/8/8/8/1K6 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 5);
+
+        // Else
+        let position = Position::from_fen("8/8/8/8/8/8/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 8);
+
+        // TODO: Castling
+        // let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+        // assert_eq!(position.legal_moves().len(), 5 + 19 + 2);
+    }
+
+    #[test]
+    fn queen_moves() {
+        // In the corner
+        let position = Position::from_fen("8/8/8/8/8/8/7K/Q7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 21 + 5);
+
+        // At the edge of the board
+        let position = Position::from_fen("8/8/8/8/8/8/7K/1Q6 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 21 + 5);
+
+        // In the center of the board
+        let position = Position::from_fen("8/8/8/7K/3Q4/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 27 + 5);
+    }
+
+    #[test]
+    fn rook_moves() {
+        // In the corner
+        let position = Position::from_fen("8/8/8/8/8/8/7K/R7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 14 + 5);
+
+        // At the edge of the board
+        let position = Position::from_fen("8/8/8/8/8/8/7K/1R6 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 14 + 5);
+
+        // Else
+        let position = Position::from_fen("8/8/8/7K/3R4/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 14 + 5);
+    }
+
+    #[test]
+    fn bishop_moves() {
+        // In the corner
+        let position = Position::from_fen("8/8/8/8/8/8/7K/B7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 7 + 5);
+
+        // At the edge of the board
+        let position = Position::from_fen("8/8/8/8/8/8/7K/1B6 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 7 + 5);
+
+        // Else
+        let position = Position::from_fen("8/8/8/7K/3B4/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 13 + 5);
+    }
+
+    #[test]
+    fn knight_moves() {
+        // In the corner
+        let position = Position::from_fen("7K/8/8/8/8/8/8/N7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 3);
+
+        // One square from a corner
+        let position = Position::from_fen("7K/8/8/8/8/8/8/1N6 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 3);
+
+        // Two squares from a corner
+        let position = Position::from_fen("7K/8/8/8/8/8/1N6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 4 + 3);
+
+        // Three squares from a corner
+        let position = Position::from_fen("7K/8/8/8/8/1N6/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 6 + 3);
+
+        // In the center
+        let position = Position::from_fen("7K/8/8/8/3K4/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 8 + 3);
+    }
+
+    #[test]
+    fn pawn_moves() {
+        // Single push
+        let position = Position::from_fen("7K/8/8/8/8/1P6/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 1 + 3);
+
+        // Single push with captures
+        let position = Position::from_fen("7K/8/8/8/p1p5/1P6/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 3);
+
+        // Double push
+        let position = Position::from_fen("7K/8/8/8/8/8/1P6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 3);
+
+        // Double push with captures
+        let position = Position::from_fen("7K/8/8/8/8/p1p5/1P6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 4 + 3);
+
+        // Promotion
+        let position = Position::from_fen("7K/1P6/8/8/8/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 4 + 3);
+
+        // Promotion with captures
+        let position = Position::from_fen("p1p4K/1P6/8/8/8/8/8/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 12 + 3);
+
+        // TODO: En-passant capture
+        // let position = Position::from_fen("7K/8/8/pP6/8/8/8/8 w - a6 0 1");
+        // assert_eq!(position.legal_moves().len(), 2 + 3);
+    }
+
+    #[test]
+    fn double_check() {
+        let position = Position::from_fen("4q3/8/b7/8/8/7R/3PK3/5N2 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3);
+    }
+
+    #[test]
+    fn single_check() {
+        // Moving the king
+        let position = Position::from_fen("q7/8/8/8/8/8/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2);
+
+        // Capturing the checker
+        let position = Position::from_fen("qR6/8/8/8/8/8/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 1);
+
+        // Blocking the check
+        let position = Position::from_fen("q7/1R6/8/8/8/8/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 1);
+    }
+
+    #[test]
+    fn pinned_straight_sliders() {
+        // TODO: Pinned by diagonal slider
+        // let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
+        // assert_eq!(position.legal_moves().len(), 3 + 0);
+
+        // Pinned by straight slider
+        let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 6);
+    }
+
+    #[test]
+    fn pinned_diagonal_sliders() {
+        // TODO: Diagonal slider pinned by diagonal slider
+        // let position = Position::from_fen("7q/8/8/8/8/2B5/8/K7 w - - 0 1");
+        // assert_eq!(position.legal_moves().len(), 3 + 6);
+
+        // Diagonal slider pinned by straight slider
+        let position = Position::from_fen("q7/8/8/8/8/B7/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 0);
+    }
+
+    #[test]
+    fn pinned_knights() {
+        let position = Position::from_fen("q7/8/8/8/8/N7/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 0);
+    }
+
+    #[test]
+    fn pinned_pawns() {
+        // Pinned in the direction of movement
+        let position = Position::from_fen("q7/8/8/8/8/P7/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 1);
+
+        // With double-push pinned in the direction of movement
+        let position = Position::from_fen("q7/8/8/8/8/8/P7/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 2);
+
+        // Pinned not in the direction of movement
+        let position = Position::from_fen("7q/8/8/8/1p6/2P5/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 0);
+
+        // Pinned not in the direction of movement that can capture the attacker
+        let position = Position::from_fen("8/8/8/8/1p1q4/2P5/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 1);
+    }
+
+    #[test]
+    fn en_passant_discovered_check() {
+        // TODO:
+        // let position = Position::from_fen("8/8/8/K2Pp2q/8/8/8/8 w - e6 0 1");
+        // assert_eq!(position.legal_moves().len(), 5 + 1);
     }
 }
