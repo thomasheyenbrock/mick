@@ -171,7 +171,7 @@ impl Position {
         }
 
         // Pinned diagonal sliders
-        for (from_board, from) in ((queen | rook) & pinned).iter() {
+        for (from_board, from) in ((queen | bishop) & pinned).iter() {
             let attacks =
                 from_board.diagonal_attacks(&empty_squares) & from.lines_along(&king_square);
             for (_, to) in (attacks & capture_mask).iter() {
@@ -857,20 +857,19 @@ mod legal_moves {
 
     #[test]
     fn pinned_straight_sliders() {
-        // TODO: Pinned by diagonal slider
-        // let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
-        // assert_eq!(position.legal_moves().len(), 3 + 0);
+        // Pinned by diagonal slider
+        let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 0);
 
         // Pinned by straight slider
-        let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
+        let position = Position::from_fen("q7/8/8/8/8/R7/8/K7 w - - 0 1");
         assert_eq!(position.legal_moves().len(), 3 + 6);
     }
 
     #[test]
     fn pinned_diagonal_sliders() {
-        // TODO: Diagonal slider pinned by diagonal slider
-        // let position = Position::from_fen("7q/8/8/8/8/2B5/8/K7 w - - 0 1");
-        // assert_eq!(position.legal_moves().len(), 3 + 6);
+        let position = Position::from_fen("7q/8/8/8/8/2B5/8/K7 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3 + 6);
 
         // Diagonal slider pinned by straight slider
         let position = Position::from_fen("q7/8/8/8/8/B7/8/K7 w - - 0 1");
