@@ -9,10 +9,15 @@ static SQUARES: [&str; 64] = [
     "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
 ];
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Square(u8);
 
 impl Square {
+    pub const WHITE_KINGSIDE_TARGET: Self = Self(6);
+    pub const WHITE_QUEENSIDE_TARGET: Self = Self(2);
+    pub const BLACK_KINGSIDE_TARGET: Self = Self(62);
+    pub const BLACK_QUEENSIDE_TARGET: Self = Self(58);
+
     pub fn between(&self, rhs: &Self) -> Board {
         SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
     }

@@ -20,6 +20,16 @@ impl Board {
     const NOT_FILE_A: Self = Self(0xFEFE_FEFE_FEFE_FEFE);
     const NOT_FILE_H: Self = Self(0x7F7F_7F7F_7F7F_7F7F);
 
+    pub const WHITE_KINGSIDE_BLOCKING: Self = Self(0x0000_0000_0000_0060);
+    pub const WHITE_QUEENSIDE_BLOCKING: Self = Self(0x0000_0000_0000_000E);
+    pub const BLACK_KINGSIDE_BLOCKING: Self = Self(0x6000_0000_0000_0000);
+    pub const BLACK_QUEENSIDE_BLOCKING: Self = Self(0x0E00_0000_0000_0000);
+
+    pub const WHITE_KINGSIDE_SAFE: Self = Self(0x0000_0000_0000_0070);
+    pub const WHITE_QUEENSIDE_SAFE: Self = Self(0x0000_0000_0000_001C);
+    pub const BLACK_KINGSIDE_SAFE: Self = Self(0x7000_0000_0000_0000);
+    pub const BLACK_QUEENSIDE_SAFE: Self = Self(0x1C00_0000_0000_0000);
+
     pub fn diagonal_attacks(&self, empty_squares: &Self) -> Self {
         self.north_east_attacks(empty_squares)
             | self.north_west_attacks(empty_squares)

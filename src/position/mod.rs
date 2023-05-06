@@ -2,7 +2,7 @@ mod zorbist;
 
 use crate::{
     board::Board,
-    castle::{Castle, CastlingRights},
+    castle::{Castle, CastlingRights, CASTLE_BY_SIDE},
     piece::{Piece, PieceKind},
     r#move::Move,
     side::Side,
@@ -81,7 +81,8 @@ impl Position {
         let mut legal_moves = Vec::<Move>::with_capacity(60);
 
         let (attacked, checkers, pinned, pinners) = self.metadata();
-        let empty_squares = !(self.side_boards[0] | self.side_boards[1]);
+        let occupied = self.side_boards[0] | self.side_boards[1];
+        let empty_squares = !occupied;
 
         // Opponent pieces
         let mut capture_mask = self.side_boards[(!self.side_to_move).to_usize()];
@@ -128,6 +129,18 @@ impl Position {
             _ => {
                 // King is in double-check, so the only legal moves are king moves
                 return legal_moves;
+            }
+        }
+
+        // Castles
+        for (castle, castling_rights, to, blocking, safe) in
+            CASTLE_BY_SIDE[self.side_to_move.to_usize()]
+        {
+            if self.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
+                && occupied & blocking == Board::EMPTY
+                && safe & attacked == Board::EMPTY
+            {
+                legal_moves.push(Move::new_castle(&king_square, &to, &castle))
             }
         }
 
@@ -196,6 +209,7 @@ impl Position {
 
         // Pawn moves
         let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).to_usize()];
+        // TODO: make this an array lookup (if it's faster)
         let (rotate, double_push_rank_index, promotion_rank_index) =
             if self.side_to_move == Side::WHITE {
                 (8, 3, 7)
@@ -730,9 +744,9 @@ mod legal_moves {
         let position = Position::from_fen("8/8/8/8/8/8/1K6/8 w - - 0 1");
         assert_eq!(position.legal_moves().len(), 8);
 
-        // TODO: Castling
-        // let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        // assert_eq!(position.legal_moves().len(), 5 + 19 + 2);
+        // Castling
+        let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+        assert_eq!(position.legal_moves().len(), 5 + 19 + 2);
     }
 
     #[test]

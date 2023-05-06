@@ -59,6 +59,13 @@ impl Move {
         (self.0 & 0b10_00000 == 0) && (self.1 & 0b11_000000 == 0b11_000000)
     }
 
+    pub fn new_castle(from: &Square, to: &Square, castle: &Castle) -> Self {
+        Self(
+            from.to_u8() | 0b01_000000,
+            to.to_u8() | (castle.to_u8() << 7),
+        )
+    }
+
     pub fn new_capture(from: &Square, to: &Square) -> Self {
         Self(from.to_u8(), to.to_u8() | 0b01_000000)
     }

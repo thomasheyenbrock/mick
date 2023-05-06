@@ -1,6 +1,9 @@
 use std::ops::BitAnd;
 
-#[derive(Debug, Eq, PartialEq)]
+use crate::{board::Board, square::Square};
+
+// TODO: benchmark if it's faster to just expose the internal value
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Castle(u8);
 
 impl Castle {
@@ -9,6 +12,10 @@ impl Castle {
 
     pub fn new(c: u8) -> Self {
         Self(c)
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        self.0
     }
 }
 
@@ -78,6 +85,41 @@ impl Iterator for CastlingRightsIterator {
         }
     }
 }
+
+pub static CASTLE_BY_SIDE: [[(Castle, CastlingRights, Square, Board, Board); 2]; 2] = [
+    [
+        (
+            Castle::KINGSIDE,
+            CastlingRights::WHITE_KINGSIDE,
+            Square::WHITE_KINGSIDE_TARGET,
+            Board::WHITE_KINGSIDE_BLOCKING,
+            Board::WHITE_KINGSIDE_SAFE,
+        ),
+        (
+            Castle::QUEENSIDE,
+            CastlingRights::WHITE_QUEENSIDE,
+            Square::WHITE_QUEENSIDE_TARGET,
+            Board::WHITE_QUEENSIDE_BLOCKING,
+            Board::WHITE_QUEENSIDE_SAFE,
+        ),
+    ],
+    [
+        (
+            Castle::KINGSIDE,
+            CastlingRights::BLACK_KINGSIDE,
+            Square::BLACK_KINGSIDE_TARGET,
+            Board::BLACK_KINGSIDE_BLOCKING,
+            Board::BLACK_KINGSIDE_SAFE,
+        ),
+        (
+            Castle::QUEENSIDE,
+            CastlingRights::BLACK_QUEENSIDE,
+            Square::BLACK_QUEENSIDE_TARGET,
+            Board::BLACK_QUEENSIDE_BLOCKING,
+            Board::BLACK_QUEENSIDE_SAFE,
+        ),
+    ],
+];
 
 #[cfg(test)]
 mod tests {
