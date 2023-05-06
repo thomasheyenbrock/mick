@@ -79,6 +79,10 @@ impl Move {
         ]
     }
 
+    pub fn new_en_passant_capture(from: &Square, to: &Square) -> Self {
+        Self(from.to_u8(), to.to_u8() | 0b11_000000)
+    }
+
     pub fn new_push(from: &Square, to: &Square) -> Self {
         Self(from.to_u8(), to.to_u8())
     }

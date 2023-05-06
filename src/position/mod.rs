@@ -1,7 +1,7 @@
 mod zorbist;
 
 use crate::{
-    board::Board,
+    board::{Board, RANKS},
     castle::{Castle, CastlingRights, CASTLE_BY_SIDE},
     piece::{Piece, PieceKind},
     r#move::Move,
@@ -85,7 +85,8 @@ impl Position {
         let empty_squares = !occupied;
 
         // Opponent pieces
-        let mut capture_mask = self.side_boards[(!self.side_to_move).to_usize()];
+        let opponent_side = !self.side_to_move;
+        let mut capture_mask = self.side_boards[opponent_side.to_usize()];
         // Empty squares
         let mut push_mask = empty_squares;
         let not_attacked = !attacked;
@@ -273,6 +274,53 @@ impl Position {
                 (from_board.pawn_attacks(&self.side_to_move) & diagonals & capture_mask).iter()
             {
                 legal_moves.push(Move::new_capture(&from, &to))
+            }
+        }
+
+        // En-passant captures
+        if let Some(en_passant_target) = self.en_passant_target {
+            let capturers = pawn & en_passant_target.to_board().pawn_attacks(&opponent_side);
+
+            for (_, from) in capturers.iter() {
+                // Capturing is only possible when moving to a square in `push_mask`
+                // or capturing a piece on `capture_mask`
+                let capture_square = if self.side_to_move == Side::WHITE {
+                    Square::new(en_passant_target.to_u8() - 8)
+                } else {
+                    Square::new(en_passant_target.to_u8() + 8)
+                };
+                if push_mask.has(&en_passant_target) || capture_mask.has(&capture_square) {
+                    let is_discovered_check = {
+                        let rank = RANKS[capture_square.to_usize()];
+                        if rank & king == Board::EMPTY {
+                            false
+                        } else {
+                            let opponent = !self.side_to_move;
+                            let queen =
+                                self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
+                            let rook =
+                                self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
+                            let potential_attackers = queen | rook;
+
+                            let mut occupied = occupied;
+                            occupied.flip_square(&from);
+                            occupied.flip_square(&capture_square);
+
+                            let mut is_discovered_check = false;
+                            for (_, attacker) in potential_attackers.iter() {
+                                if king_square.between(&attacker) & occupied == Board::EMPTY {
+                                    is_discovered_check = true;
+                                    break;
+                                }
+                            }
+
+                            is_discovered_check
+                        }
+                    };
+                    if !is_discovered_check {
+                        legal_moves.push(Move::new_en_passant_capture(&from, &en_passant_target));
+                    }
+                }
             }
         }
 
@@ -474,7 +522,7 @@ impl Position {
 
         // Pawns and knights can only be checkers, no pinners
         checkers |= (friendly_king.knight_attacks() & knight)
-            | (friendly_king.pawn_attacks(&opponent) & pawn);
+            | (friendly_king.pawn_attacks(&self.side_to_move) & pawn);
 
         (attacked, checkers, pinned, pinners)
     }
@@ -843,9 +891,9 @@ mod legal_moves {
         let position = Position::from_fen("p1p4K/1P6/8/8/8/8/8/8 w - - 0 1");
         assert_eq!(position.legal_moves().len(), 12 + 3);
 
-        // TODO: En-passant capture
-        // let position = Position::from_fen("7K/8/8/pP6/8/8/8/8 w - a6 0 1");
-        // assert_eq!(position.legal_moves().len(), 2 + 3);
+        // En-passant capture
+        let position = Position::from_fen("7K/8/8/pP6/8/8/8/8 w - a6 0 1");
+        assert_eq!(position.legal_moves().len(), 2 + 3);
     }
 
     #[test]
@@ -917,8 +965,18 @@ mod legal_moves {
 
     #[test]
     fn en_passant_discovered_check() {
-        // TODO:
-        // let position = Position::from_fen("8/8/8/K2Pp2q/8/8/8/8 w - e6 0 1");
-        // assert_eq!(position.legal_moves().len(), 5 + 1);
+        let position = Position::from_fen("8/8/8/K2Pp2q/8/8/8/8 w - e6 0 1");
+        assert_eq!(position.legal_moves().len(), 5 + 1);
+    }
+
+    #[test]
+    fn en_passant_when_in_check() {
+        // Capturing the checker not possible
+        let position = Position::from_fen("8/K6q/8/3Pp3/8/8/8/8 w - e6 0 1");
+        assert_eq!(position.legal_moves().len(), 4 + 0);
+
+        // Capturing the checker possible
+        let position = Position::from_fen("8/8/8/3Pp3/5K2/8/8/8 w - e6 0 1");
+        assert_eq!(position.legal_moves().len(), 8 + 1);
     }
 }

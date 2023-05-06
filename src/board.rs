@@ -58,6 +58,10 @@ impl Board {
         self.0 ^= 1 << square.to_usize()
     }
 
+    pub fn has(&self, square: &Square) -> bool {
+        self.0 & (1 << square.to_u8()) != 0
+    }
+
     pub fn iter(&self) -> BoardIterator {
         BoardIterator(self.0)
     }
@@ -359,6 +363,73 @@ pub static FILES: [Board; 64] = [
     Board(0x2020_2020_2020_2020), // f8
     Board(0x4040_4040_4040_4040), // g8
     Board(0x8080_8080_8080_8080), // h8
+];
+
+pub static RANKS: [Board; 64] = [
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_00FF),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_0000_FF00),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_00FF_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_0000_FF00_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_00FF_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x0000_FF00_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0x00FF_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
+    Board(0xFF00_0000_0000_0000),
 ];
 
 pub static STRAIGHT_RAYS: [Board; 64] = [

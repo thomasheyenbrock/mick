@@ -50,6 +50,10 @@ impl Square {
         STRAIGHT_RAYS[self.0 as usize]
     }
 
+    pub fn to_board(&self) -> Board {
+        Board::new(1 << self.0)
+    }
+
     pub fn to_u8(&self) -> u8 {
         self.0
     }
