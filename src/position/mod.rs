@@ -176,7 +176,7 @@ impl Position {
             for (_, to) in (single_push & push_mask).iter() {
                 if to.rank_index() == promotion_rank_index {
                     // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
-                    legal_moves.append(&mut Move::new_push_promotion(&from, &to));
+                    legal_moves.append(&mut Move::all_push_promotions(&from, &to));
                 } else {
                     legal_moves.push(Move::new_push(&from, &to));
                 }
@@ -194,7 +194,7 @@ impl Position {
             for (_, to) in (from_board.pawn_attacks(&self.side_to_move) & capture_mask).iter() {
                 if to.rank_index() == promotion_rank_index {
                     // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
-                    legal_moves.append(&mut Move::new_capture_promotion(&from, &to));
+                    legal_moves.append(&mut Move::all_capture_promotions(&from, &to));
                 } else {
                     legal_moves.push(Move::new_capture(&from, &to));
                 }
@@ -269,7 +269,7 @@ impl Position {
                         }
                     };
                     if !is_discovered_check {
-                        legal_moves.push(Move::new_en_passant_capture(&from, &en_passant_target));
+                        legal_moves.push(Move::new_capture_en_passant(&from, &en_passant_target));
                     }
                 }
             }

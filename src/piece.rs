@@ -58,6 +58,10 @@ impl PieceKind {
     pub fn to_piece(&self, side: &Side) -> Piece {
         Piece(2 * self.0 + side.to_u8())
     }
+
+    pub fn to_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 #[cfg(test)]

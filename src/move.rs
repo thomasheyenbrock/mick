@@ -39,6 +39,24 @@ pub struct Move(
 );
 
 impl Move {
+    pub fn all_capture_promotions(from: &Square, to: &Square) -> Vec<Self> {
+        vec![
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b01_000000),
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b11_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b01_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b11_000000),
+        ]
+    }
+
+    pub fn all_push_promotions(from: &Square, to: &Square) -> Vec<Self> {
+        vec![
+            Self(from.to_u8() | 0b10_000000, to.to_u8()),
+            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b10_000000),
+            Self(from.to_u8() | 0b11_000000, to.to_u8()),
+            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b10_000000),
+        ]
+    }
+
     pub fn castle(&self) -> Option<Castle> {
         if self.0 & 0b11_000000 == 0b01_000000 {
             Some(Castle::new((self.1 & 0b10_000000) >> 7))
@@ -69,18 +87,13 @@ impl Move {
     pub fn new_capture(from: &Square, to: &Square) -> Self {
         Self(from.to_u8(), to.to_u8() | 0b01_000000)
     }
-
-    pub fn new_capture_promotion(from: &Square, to: &Square) -> Vec<Self> {
-        vec![
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b01_000000),
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b11_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b01_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b11_000000),
-        ]
+    pub fn new_capture_en_passant(from: &Square, to: &Square) -> Self {
+        Self(from.to_u8(), to.to_u8() | 0b11_000000)
     }
 
-    pub fn new_en_passant_capture(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8() | 0b11_000000)
+    pub fn new_capture_promotion(from: &Square, to: &Square, piece: &PieceKind) -> Self {
+        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.to_usize()];
+        Self(from.to_u8() | flag_1, to.to_u8() | flag_2 | 0b01_000000)
     }
 
     pub fn new_push(from: &Square, to: &Square) -> Self {
@@ -91,13 +104,9 @@ impl Move {
         Self(from.to_u8(), to.to_u8() | 0b10_000000)
     }
 
-    pub fn new_push_promotion(from: &Square, to: &Square) -> Vec<Self> {
-        vec![
-            Self(from.to_u8() | 0b10_000000, to.to_u8()),
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b10_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8()),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b10_000000),
-        ]
+    pub fn new_push_promotion(from: &Square, to: &Square, piece: &PieceKind) -> Self {
+        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.to_usize()];
+        Self(from.to_u8() | flag_1, to.to_u8() | flag_2)
     }
 
     pub fn promotion_piece_kind(&self) -> Option<PieceKind> {
@@ -118,6 +127,15 @@ impl Move {
         Square::new(self.1 & 0b00_111111)
     }
 }
+
+static FLAG_FOR_PROMOTION_PIECE: [(u8, u8); 6] = [
+    (0, 0),
+    (0b10_000000, 0b00_000000),
+    (0b10_000000, 0b10_000000),
+    (0b11_000000, 0b00_000000),
+    (0b11_000000, 0b10_000000),
+    (0, 0),
+];
 
 impl Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
