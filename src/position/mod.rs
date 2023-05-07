@@ -772,6 +772,30 @@ mod make_move {
             )
         )
     }
+
+    #[test]
+    fn en_passant() {
+        let mut position = Position::from_fen("8/8/8/8/1p6/8/P7/K7 w - - 0 1");
+        position.make(&Move::new_push_double_pawn(
+            &Square::new(8),
+            &Square::new(24),
+        ));
+        assert_eq!(position.pieces[8], Piece::NONE);
+        assert_eq!(position.pieces[24], Piece::WHITE_PAWN);
+        assert_eq!(
+            position.piece_boards[Piece::WHITE_PAWN.to_usize()],
+            Board::new(0x0000_0000_0100_0000)
+        );
+        assert_eq!(
+            position.side_boards[Side::WHITE.to_usize()],
+            Board::new(0x0000_0000_0100_0001)
+        );
+        assert_eq!(position.side_to_move, Side::BLACK);
+        assert_eq!(position.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(position.en_passant_target, Some(Square::new(16)));
+        assert_eq!(position.halfmove_clock, 0);
+        assert_eq!(position.fullmove_number, 1);
+    }
 }
 
 #[cfg(test)]

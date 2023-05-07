@@ -52,11 +52,11 @@ impl Move {
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
-        (self.0 & 0b11_00000 == 0b00_000000) && (self.1 & 0b11_00000 == 0b10_00000)
+        (self.0 & 0b11_000000 == 0b00_000000) && (self.1 & 0b11_000000 == 0b10_000000)
     }
 
     pub fn is_en_passant_capture(&self) -> bool {
-        (self.0 & 0b10_00000 == 0) && (self.1 & 0b11_000000 == 0b11_000000)
+        (self.0 & 0b10_000000 == 0) && (self.1 & 0b11_000000 == 0b11_000000)
     }
 
     pub fn new_castle(from: &Square, to: &Square, castle: &Castle) -> Self {
