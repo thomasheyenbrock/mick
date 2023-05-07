@@ -492,7 +492,7 @@ impl Position {
             | straight.straight_attacks(&empty_squares)
             | diagonal.diagonal_attacks(&empty_squares)
             | knight.knight_attacks()
-            | pawn.pawn_attacks(&self.side_to_move);
+            | pawn.pawn_attacks(&opponent);
 
         let king_square = friendly_king.to_square();
         let potential_attackers =
@@ -795,6 +795,29 @@ mod legal_moves {
         // Castling
         let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         assert_eq!(position.legal_moves().len(), 5 + 19 + 2);
+    }
+
+    #[test]
+    fn not_moving_king_in_check() {
+        // Attacks by queens
+        let position = Position::from_fen("8/8/8/8/8/3q4/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 3);
+
+        // Attacks by rooks
+        let position = Position::from_fen("8/8/8/8/8/3r4/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 5);
+
+        // Attacks by bishops
+        let position = Position::from_fen("8/8/8/8/2b5/8/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 6);
+
+        // Attacks by knights
+        let position = Position::from_fen("8/8/8/8/3n4/8/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 6);
+
+        // Attacks by pawns
+        let position = Position::from_fen("8/8/8/8/p7/8/1K6/8 w - - 0 1");
+        assert_eq!(position.legal_moves().len(), 7);
     }
 
     #[test]
