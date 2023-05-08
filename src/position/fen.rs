@@ -58,7 +58,11 @@ impl Position {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::Board, castle::CastlingRights, piece::Piece, position::Position, side::Side,
+        board::Board,
+        castle::CastlingRights,
+        piece::Piece,
+        position::{Position, State},
+        side::Side,
     };
 
     #[test]
@@ -153,10 +157,12 @@ mod tests {
                     Board::new(0xFFFF_0000_0000_0000)
                 ],
                 side_to_move: Side::WHITE,
-                castling_rights: CastlingRights::ALL_RIGHTS,
-                en_passant_target: None,
-                halfmove_clock: 0,
-                fullmove_number: 1,
+                state: State {
+                    castling_rights: CastlingRights::ALL_RIGHTS,
+                    en_passant_target: None,
+                    halfmove_clock: 0,
+                    fullmove_number: 1,
+                },
                 hash: 15169217504194791061
             }
         );

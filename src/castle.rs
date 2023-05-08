@@ -1,4 +1,4 @@
-use std::ops::BitAnd;
+use std::ops::{BitAnd, BitXor};
 
 use crate::{board::Board, square::Square};
 
@@ -67,6 +67,14 @@ impl BitAnd for CastlingRights {
 
     fn bitand(self, rhs: Self) -> Self::Output {
         CastlingRights(self.0 & rhs.0)
+    }
+}
+
+impl BitXor for CastlingRights {
+    type Output = CastlingRights;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        CastlingRights(self.0 ^ rhs.0)
     }
 }
 

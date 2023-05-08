@@ -14,15 +14,20 @@ use crate::{
 use self::zorbist::Zorbist;
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct State {
+    castling_rights: CastlingRights,
+    en_passant_target: Option<Square>,
+    halfmove_clock: u32,
+    fullmove_number: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Position {
     pieces: [Piece; 64],
     piece_boards: [Board; 12],
     side_boards: [Board; 2],
     side_to_move: Side,
-    castling_rights: CastlingRights,
-    en_passant_target: Option<Square>,
-    halfmove_clock: u32,
-    fullmove_number: u32,
+    state: State,
     hash: u64,
 }
 
@@ -88,7 +93,7 @@ impl Position {
         for (castle, castling_rights, to, blocking, safe) in
             CASTLE_BY_SIDE[self.side_to_move.to_usize()]
         {
-            if self.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
+            if self.state.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
                 && occupied & blocking == Board::EMPTY
                 && safe & attacked == Board::EMPTY
             {
@@ -229,7 +234,7 @@ impl Position {
         }
 
         // En-passant captures
-        if let Some(en_passant_target) = self.en_passant_target {
+        if let Some(en_passant_target) = self.state.en_passant_target {
             let capturers = pawn & en_passant_target.to_board().pawn_attacks(&opponent_side);
 
             for (_, from) in capturers.iter() {
@@ -361,10 +366,12 @@ impl Position {
             piece_boards,
             side_boards,
             side_to_move,
-            castling_rights,
-            en_passant_target,
-            halfmove_clock,
-            fullmove_number,
+            state: State {
+                castling_rights,
+                en_passant_target,
+                halfmove_clock,
+                fullmove_number,
+            },
             hash,
         }
     }

@@ -16,7 +16,9 @@ pub fn perft(position: &Position, depth: u8) -> usize {
         moves
             .iter()
             .map(|m| {
-                let c = perft(position.clone().make(m), depth - 1);
+                let mut position = position.clone();
+                position.make(m);
+                let c = perft(&position, depth - 1);
                 if DEBUG_DEPTH == depth {
                     println!("{m}: {c}")
                 }
