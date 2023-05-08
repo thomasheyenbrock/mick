@@ -9,7 +9,13 @@ use crate::{
 use super::{zorbist::Zorbist, Position, State};
 
 impl Position {
-    pub fn make(&mut self, m: &Move) -> (Piece, State) {
+    pub fn make(&self, m: &Move) -> (Self, Piece, State) {
+        let mut cloned = self.clone();
+        let (captured_piece, prev_state) = cloned.make_mut(m);
+        (cloned, captured_piece, prev_state)
+    }
+
+    pub fn make_mut(&mut self, m: &Move) -> (Piece, State) {
         let prev_state = self.state.clone();
 
         let opponent = !self.side_to_move;
@@ -170,7 +176,12 @@ impl Position {
         (captured_piece, prev_state)
     }
 
-    fn unmake(&mut self, m: &Move, captured_piece: Piece, prev_state: State) {
+    fn unmake(&self, m: &Move, captured_piece: Piece, prev_state: State) {
+        let mut cloned = self.clone();
+        cloned.unmake_mut(m, captured_piece, prev_state);
+    }
+
+    fn unmake_mut(&mut self, m: &Move, captured_piece: Piece, prev_state: State) {
         let opponent = self.side_to_move;
 
         self.side_to_move = !opponent;
@@ -290,8 +301,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(0), &Square::new(8));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[0], Piece::NONE);
         assert_eq!(p2.pieces[8], Piece::WHITE_KING);
         assert_eq!(
@@ -308,7 +318,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -317,8 +327,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/p7/K7 w - - 0 1");
         let m = Move::new_capture(&Square::new(0), &Square::new(8));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[0], Piece::NONE);
         assert_eq!(p2.pieces[8], Piece::WHITE_KING);
         assert_eq!(
@@ -337,7 +346,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -346,8 +355,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         let m = Move::new_castle(&Square::new(4), &Square::new(6), &Castle::KINGSIDE);
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[4], Piece::NONE);
         assert_eq!(p2.pieces[7], Piece::NONE);
         assert_eq!(p2.pieces[6], Piece::WHITE_KING);
@@ -370,7 +378,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -379,8 +387,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         let m = Move::new_castle(&Square::new(4), &Square::new(2), &Castle::QUEENSIDE);
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[4], Piece::NONE);
         assert_eq!(p2.pieces[0], Piece::NONE);
         assert_eq!(p2.pieces[2], Piece::WHITE_KING);
@@ -403,7 +410,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -412,8 +419,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/Q7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(62));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[62], Piece::WHITE_QUEEN);
         assert_eq!(
@@ -430,7 +436,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -439,8 +445,7 @@ mod tests {
         let p1 = Position::from_fen("6p1/8/8/8/8/8/Q7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(62));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[62], Piece::WHITE_QUEEN);
         assert_eq!(
@@ -459,7 +464,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -468,8 +473,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/R7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(56));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[56], Piece::WHITE_ROOK);
         assert_eq!(
@@ -486,7 +490,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -495,8 +499,7 @@ mod tests {
         let p1 = Position::from_fen("p7/8/8/8/8/8/R7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(56));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[56], Piece::WHITE_ROOK);
         assert_eq!(
@@ -515,7 +518,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -524,8 +527,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/B7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(62));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[62], Piece::WHITE_BISHOP);
         assert_eq!(
@@ -542,7 +544,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -551,8 +553,7 @@ mod tests {
         let p1 = Position::from_fen("6p1/8/8/8/8/8/B7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(62));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[62], Piece::WHITE_BISHOP);
         assert_eq!(
@@ -571,7 +572,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -580,8 +581,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/N7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(25));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[25], Piece::WHITE_KNIGHT);
         assert_eq!(
@@ -598,7 +598,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -607,8 +607,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/1p6/8/N7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(25));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[25], Piece::WHITE_KNIGHT);
         assert_eq!(
@@ -627,7 +626,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -636,8 +635,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/P7/K7 w - - 0 1");
         let m = Move::new_push(&Square::new(8), &Square::new(16));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[16], Piece::WHITE_PAWN);
         assert_eq!(
@@ -654,7 +652,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -663,8 +661,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/P7/K7 w - - 0 1");
         let m = Move::new_push_double_pawn(&Square::new(8), &Square::new(24));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[24], Piece::WHITE_PAWN);
         assert_eq!(
@@ -681,7 +678,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -690,8 +687,7 @@ mod tests {
         let p1 = Position::from_fen("8/P7/8/8/8/8/8/K7 w - - 0 1");
         let m = Move::new_push_promotion(&Square::new(48), &Square::new(56), &PieceKind::QUEEN);
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[48], Piece::NONE);
         assert_eq!(p2.pieces[56], Piece::WHITE_QUEEN);
         assert_eq!(p2.piece_boards[Piece::WHITE_PAWN.to_usize()], Board::EMPTY);
@@ -709,7 +705,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -718,8 +714,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/1p6/P7/K7 w - - 0 1");
         let m = Move::new_capture(&Square::new(8), &Square::new(17));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], Piece::NONE);
         assert_eq!(p2.pieces[17], Piece::WHITE_PAWN);
         assert_eq!(
@@ -738,7 +733,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -747,8 +742,7 @@ mod tests {
         let p1 = Position::from_fen("1p6/P7/8/8/8/8/8/K7 w - - 0 1");
         let m = Move::new_capture_promotion(&Square::new(48), &Square::new(57), &PieceKind::QUEEN);
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[48], Piece::NONE);
         assert_eq!(p2.pieces[57], Piece::WHITE_QUEEN);
         assert_eq!(p2.piece_boards[Piece::WHITE_PAWN.to_usize()], Board::EMPTY);
@@ -766,7 +760,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -775,8 +769,7 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/Pp6/8/8/8/K7 w - b6 0 1");
         let m = Move::new_capture_en_passant(&Square::new(32), &Square::new(41));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[32], Piece::NONE);
         assert_eq!(p2.pieces[40], Piece::NONE);
         assert_eq!(p2.pieces[41], Piece::WHITE_PAWN);
@@ -796,7 +789,7 @@ mod tests {
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -806,33 +799,30 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         let m = Move::new_push(&Square::new(4), &Square::new(5));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
 
         // When the kingside rook moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         let m = Move::new_push(&Square::new(7), &Square::new(6));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_QUEENSIDE);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
 
         // When the queenside rook moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
         let m = Move::new_push(&Square::new(0), &Square::new(1));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_KINGSIDE);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 
@@ -842,13 +832,12 @@ mod tests {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/k7 b - - 0 1");
         let m = Move::new_push(&Square::new(0), &Square::new(1));
 
-        let mut p2 = p1.clone();
-        let (captured_piece, prev_state) = p2.make(&m);
+        let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.side_to_move, Side::WHITE);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 2);
 
-        p2.unmake(&m, captured_piece, prev_state);
+        p2.unmake_mut(&m, captured_piece, prev_state);
         assert_eq!(p1, p2);
     }
 }
