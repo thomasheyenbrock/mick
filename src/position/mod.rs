@@ -3,7 +3,10 @@ mod r#move;
 
 use crate::{
     board::{Board, RANKS},
-    castle::{CastlingRights, CASTLE_BY_SIDE},
+    castle::{
+        Castle, CastlingRights, BLACK_KING_SIDE, BLACK_QUEEN_SIDE, KING_SIDE, NO_RIGHTS,
+        QUEEN_SIDE, WHITE_KING_SIDE, WHITE_QUEEN_SIDE,
+    },
     hash::DEFAULT_ZOBRISH_HASH,
     piece::{Piece, BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     r#move::Move,
@@ -95,7 +98,7 @@ impl Position {
         for (castle, castling_rights, to, blocking, safe) in
             CASTLE_BY_SIDE[self.state.side_to_move.0 as usize]
         {
-            if self.state.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
+            if self.state.castling_rights.0 & castling_rights.0 != 0
                 && occupied & blocking == Board::EMPTY
                 && safe & attacked == Board::EMPTY
             {
@@ -414,6 +417,41 @@ impl Display for Position {
         write!(f, "{}", &s)
     }
 }
+
+pub static CASTLE_BY_SIDE: [[(Castle, CastlingRights, Square, Board, Board); 2]; 2] = [
+    [
+        (
+            KING_SIDE,
+            WHITE_KING_SIDE,
+            Square::WHITE_KINGSIDE_TARGET,
+            Board::WHITE_KINGSIDE_BLOCKING,
+            Board::WHITE_KINGSIDE_SAFE,
+        ),
+        (
+            QUEEN_SIDE,
+            WHITE_QUEEN_SIDE,
+            Square::WHITE_QUEENSIDE_TARGET,
+            Board::WHITE_QUEENSIDE_BLOCKING,
+            Board::WHITE_QUEENSIDE_SAFE,
+        ),
+    ],
+    [
+        (
+            KING_SIDE,
+            BLACK_KING_SIDE,
+            Square::BLACK_KINGSIDE_TARGET,
+            Board::BLACK_KINGSIDE_BLOCKING,
+            Board::BLACK_KINGSIDE_SAFE,
+        ),
+        (
+            QUEEN_SIDE,
+            BLACK_QUEEN_SIDE,
+            Square::BLACK_QUEENSIDE_TARGET,
+            Board::BLACK_QUEENSIDE_BLOCKING,
+            Board::BLACK_QUEENSIDE_SAFE,
+        ),
+    ],
+];
 
 #[cfg(test)]
 mod tests {

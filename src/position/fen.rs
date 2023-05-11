@@ -36,7 +36,8 @@ impl Position {
         }
 
         let side = Side::try_from_str(unsafe { parts.get_unchecked(1) }).expect("Invalid FEN");
-        let castling_rights = CastlingRights::from_str(unsafe { parts.get_unchecked(2) });
+        let castling_rights =
+            CastlingRights::try_from_str(unsafe { parts.get_unchecked(2) }).expect("Invalid FEN");
         let en_passant_target = Square::try_from_str(unsafe { parts.get_unchecked(3) }).ok();
 
         let raw_halfmove_clock = unsafe { parts.get_unchecked(4) };
@@ -110,7 +111,7 @@ impl Position {
 mod tests {
     use crate::{
         board::Board,
-        castle::CastlingRights,
+        castle::ALL_RIGHTS,
         piece::{
             BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK,
             NULL_PIECE, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN,
@@ -210,7 +211,7 @@ mod tests {
                 side_boards: [Board(0x0000_0000_0000_FFFF), Board(0xFFFF_0000_0000_0000)],
                 state: State {
                     side_to_move: WHITE,
-                    castling_rights: CastlingRights::ALL_RIGHTS,
+                    castling_rights: ALL_RIGHTS,
                     en_passant_target: None,
                     halfmove_clock: 0,
                     fullmove_number: 1,

@@ -203,7 +203,7 @@ pub fn castle_squares(side: Side, castle: Castle) -> (Square, Square, Square, Sq
 mod tests {
     use crate::{
         board::Board,
-        castle::{Castle, CastlingRights},
+        castle::{KING_SIDE, NO_RIGHTS, QUEEN_SIDE, WHITE_KING_SIDE, WHITE_QUEEN_SIDE},
         piece::{
             BLACK_PAWN, NULL_PIECE, QUEEN, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN,
             WHITE_QUEEN, WHITE_ROOK,
@@ -236,7 +236,7 @@ mod tests {
             Board(0x0000_0000_0000_0100)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -267,7 +267,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -282,7 +282,7 @@ mod tests {
         let mut p2 = p1.clone();
         let p2_state = p2.state.clone();
         let p2_hash = p2.hash;
-        let m = Move::new_castle(Square(4), Square(6), Castle::KINGSIDE);
+        let m = Move::new_castle(Square(4), Square(6), KING_SIDE);
 
         let capture = p2.make(m);
         assert_eq!(p2.pieces[4], NULL_PIECE);
@@ -302,7 +302,7 @@ mod tests {
             Board(0x0000_0000_0000_0061)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -317,7 +317,7 @@ mod tests {
         let mut p2 = p1.clone();
         let p2_state = p2.state.clone();
         let p2_hash = p2.hash;
-        let m = Move::new_castle(Square(4), Square(2), Castle::QUEENSIDE);
+        let m = Move::new_castle(Square(4), Square(2), QUEEN_SIDE);
 
         let capture = p2.make(m);
         assert_eq!(p2.pieces[4], NULL_PIECE);
@@ -337,7 +337,7 @@ mod tests {
             Board(0x0000_0000_0000_008C)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -366,7 +366,7 @@ mod tests {
             Board(0x4000_0000_0000_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -397,7 +397,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -426,7 +426,7 @@ mod tests {
             Board(0x0100_0000_0000_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -457,7 +457,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -486,7 +486,7 @@ mod tests {
             Board(0x4000_0000_0000_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -517,7 +517,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -546,7 +546,7 @@ mod tests {
             Board(0x0000_0000_0200_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -577,7 +577,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -606,7 +606,7 @@ mod tests {
             Board(0x0000_0000_0001_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -635,7 +635,7 @@ mod tests {
             Board(0x0000_0000_0100_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, Some(Square(16)));
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -665,7 +665,7 @@ mod tests {
             Board(0x0100_0000_0000_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -696,7 +696,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -726,7 +726,7 @@ mod tests {
             Board(0x0200_0000_0000_0001)
         );
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -758,7 +758,7 @@ mod tests {
         assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
         assert_eq!(p2.state.fullmove_number, 1);
@@ -777,7 +777,7 @@ mod tests {
         let m = Move::new_push(Square(4), Square(5));
 
         let capture = p2.make(m);
-        assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
+        assert_eq!(p2.state.castling_rights, NO_RIGHTS);
 
         p2.unmake(m, capture, &p2_state, p2_hash);
         assert_eq!(p1, p2);
@@ -790,7 +790,7 @@ mod tests {
         let m = Move::new_push(Square(7), Square(6));
 
         let capture = p2.make(m);
-        assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_QUEENSIDE);
+        assert_eq!(p2.state.castling_rights, WHITE_QUEEN_SIDE);
 
         p2.unmake(m, capture, &p2_state, p2_hash);
         assert_eq!(p1, p2);
@@ -803,7 +803,7 @@ mod tests {
         let m = Move::new_push(Square(0), Square(1));
 
         let capture = p2.make(m);
-        assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_KINGSIDE);
+        assert_eq!(p2.state.castling_rights, WHITE_KING_SIDE);
 
         p2.unmake(m, capture, &p2_state, p2_hash);
         assert_eq!(p1, p2);
