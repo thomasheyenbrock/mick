@@ -49,7 +49,7 @@ impl Position {
         let not_attacked = !attacked;
 
         // King moves
-        let king = self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+        let king = self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).0 as usize];
         let king_square = king.to_square();
         let king_moves = king.king_attacks();
         for (_, to) in (king_moves & capture_mask & not_attacked).iter() {
@@ -70,11 +70,11 @@ impl Position {
                 let checker_square = checkers.to_square();
 
                 let queen =
-                    self.piece_boards[PieceKind::QUEEN.to_piece(&!self.side_to_move).to_usize()];
+                    self.piece_boards[PieceKind::QUEEN.to_piece(&!self.side_to_move).0 as usize];
                 let rook =
-                    self.piece_boards[PieceKind::ROOK.to_piece(&!self.side_to_move).to_usize()];
+                    self.piece_boards[PieceKind::ROOK.to_piece(&!self.side_to_move).0 as usize];
                 let bishop =
-                    self.piece_boards[PieceKind::BISHOP.to_piece(&!self.side_to_move).to_usize()];
+                    self.piece_boards[PieceKind::BISHOP.to_piece(&!self.side_to_move).0 as usize];
                 let sliders = queen | rook | bishop;
 
                 if sliders & checkers == Board::EMPTY {
@@ -103,9 +103,9 @@ impl Position {
         }
 
         // Slider moves
-        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&self.side_to_move).to_usize()];
-        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&self.side_to_move).to_usize()];
-        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&self.side_to_move).to_usize()];
+        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&self.side_to_move).0 as usize];
+        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&self.side_to_move).0 as usize];
+        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&self.side_to_move).0 as usize];
 
         // Non-pinned straight sliders
         for (from_board, from) in ((queen | rook) & !pinned).iter() {
@@ -154,7 +154,7 @@ impl Position {
         }
 
         // Knight moves (pinned knights can't move)
-        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&self.side_to_move).to_usize()];
+        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&self.side_to_move).0 as usize];
         for (from_board, from) in (knight & !pinned).iter() {
             let attacks = from_board.knight_attacks();
             for (_, to) in (attacks & capture_mask).iter() {
@@ -166,7 +166,7 @@ impl Position {
         }
 
         // Pawn moves
-        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).to_usize()];
+        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).0 as usize];
         // TODO: make this an array lookup (if it's faster)
         let (rotate, double_push_rank_index, promotion_rank_index) = if self.side_to_move == WHITE {
             (8, 3, 7)
@@ -241,21 +241,21 @@ impl Position {
                 // Capturing is only possible when moving to a square in `push_mask`
                 // or capturing a piece on `capture_mask`
                 let capture_square = if self.side_to_move == WHITE {
-                    Square::new(en_passant_target.to_u8() - 8)
+                    Square(en_passant_target.0 - 8)
                 } else {
-                    Square::new(en_passant_target.to_u8() + 8)
+                    Square(en_passant_target.0 + 8)
                 };
                 if push_mask.has(&en_passant_target) || capture_mask.has(&capture_square) {
                     let is_discovered_check = {
-                        let rank = RANKS[capture_square.to_usize()];
+                        let rank = RANKS[capture_square.0 as usize];
                         if rank & king == Board::EMPTY {
                             false
                         } else {
                             let opponent = !self.side_to_move;
                             let queen =
-                                self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
+                                self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).0 as usize];
                             let rook =
-                                self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
+                                self.piece_boards[PieceKind::ROOK.to_piece(&opponent).0 as usize];
                             let potential_attackers = queen | rook;
 
                             let mut occupied = occupied;
@@ -285,18 +285,18 @@ impl Position {
 
     fn metadata(&self) -> (Board, Board, Board, Board) {
         let friendly_king =
-            self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).to_usize()];
+            self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).0 as usize];
 
         let occupied = self.side_boards[0] | self.side_boards[1];
         let empty_squares = !(self.side_boards[0] | self.side_boards[1]) ^ friendly_king;
         let opponent = !self.side_to_move;
 
-        let king = self.piece_boards[PieceKind::KING.to_piece(&opponent).to_usize()];
-        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).to_usize()];
-        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&opponent).to_usize()];
-        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).to_usize()];
-        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).to_usize()];
-        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&opponent).to_usize()];
+        let king = self.piece_boards[PieceKind::KING.to_piece(&opponent).0 as usize];
+        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).0 as usize];
+        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&opponent).0 as usize];
+        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).0 as usize];
+        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).0 as usize];
+        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&opponent).0 as usize];
 
         let straight = queen | rook;
         let diagonal = queen | bishop;
@@ -398,7 +398,7 @@ impl Display for Position {
         ];
         let s = grid_to_string_with_props(
             |s: Square| -> char {
-                let piece = self.pieces[s.to_usize()];
+                let piece = self.pieces[s.0 as usize];
                 if piece.is_some() {
                     piece.to_char()
                 } else {

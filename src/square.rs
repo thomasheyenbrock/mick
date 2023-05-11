@@ -10,7 +10,7 @@ static SQUARES: [&str; 64] = [
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Square(u8);
+pub struct Square(pub u8);
 
 impl Square {
     pub const WHITE_KINGSIDE_TARGET: Self = Self(6);
@@ -42,10 +42,6 @@ impl Square {
         LINES_ALONG[self.0 as usize][rhs.0 as usize]
     }
 
-    pub fn new(index: u8) -> Self {
-        Self(index)
-    }
-
     pub fn rank_index(&self) -> usize {
         self.0.div_floor(8) as usize
     }
@@ -55,15 +51,7 @@ impl Square {
     }
 
     pub fn to_board(&self) -> Board {
-        Board::new(1 << self.0)
-    }
-
-    pub fn to_u8(&self) -> u8 {
-        self.0
-    }
-
-    pub fn to_usize(&self) -> usize {
-        self.0 as usize
+        Board(1 << self.0)
     }
 
     pub fn try_from_str(s: &str) -> Result<Self, String> {

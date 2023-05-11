@@ -18,8 +18,8 @@ impl Position {
                     let square_index = (7 - rank_index) * 8 + file_index;
                     pieces[square_index] = piece;
 
-                    let board = &mut piece_boards[piece.to_usize()];
-                    board.flip_square(&Square::new(square_index as u8));
+                    let board = &mut piece_boards[piece.0 as usize];
+                    board.flip_square(&Square(square_index as u8));
                     file_index += 1;
                 } else if let Some(digit) = char.to_digit(10) {
                     file_index += digit as usize;
@@ -60,7 +60,7 @@ impl Position {
         for rank_index in 0..8 {
             let mut empty = 0;
             for file_index in 0..8 {
-                let piece = self.pieces[Square::from(7 - rank_index, file_index).to_usize()];
+                let piece = self.pieces[Square::from(7 - rank_index, file_index).0 as usize];
                 if piece.is_some() {
                     if empty > 0 {
                         fen += &empty.to_string();
@@ -184,23 +184,20 @@ mod tests {
                     Piece::BLACK_ROOK,
                 ],
                 piece_boards: [
-                    Board::new(0x0000_0000_0000_0010),
-                    Board::new(0x1000_0000_0000_0000),
-                    Board::new(0x0000_0000_0000_0008),
-                    Board::new(0x0800_0000_0000_0000),
-                    Board::new(0x0000_0000_0000_0081),
-                    Board::new(0x8100_0000_0000_0000),
-                    Board::new(0x0000_0000_0000_0024),
-                    Board::new(0x2400_0000_0000_0000),
-                    Board::new(0x0000_0000_0000_0042),
-                    Board::new(0x4200_0000_0000_0000),
-                    Board::new(0x0000_0000_0000_FF00),
-                    Board::new(0x00FF_0000_0000_0000),
+                    Board(0x0000_0000_0000_0010),
+                    Board(0x1000_0000_0000_0000),
+                    Board(0x0000_0000_0000_0008),
+                    Board(0x0800_0000_0000_0000),
+                    Board(0x0000_0000_0000_0081),
+                    Board(0x8100_0000_0000_0000),
+                    Board(0x0000_0000_0000_0024),
+                    Board(0x2400_0000_0000_0000),
+                    Board(0x0000_0000_0000_0042),
+                    Board(0x4200_0000_0000_0000),
+                    Board(0x0000_0000_0000_FF00),
+                    Board(0x00FF_0000_0000_0000),
                 ],
-                side_boards: [
-                    Board::new(0x0000_0000_0000_FFFF),
-                    Board::new(0xFFFF_0000_0000_0000)
-                ],
+                side_boards: [Board(0x0000_0000_0000_FFFF), Board(0xFFFF_0000_0000_0000)],
                 side_to_move: WHITE,
                 state: State {
                     castling_rights: CastlingRights::ALL_RIGHTS,

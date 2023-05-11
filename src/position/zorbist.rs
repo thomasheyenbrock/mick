@@ -855,7 +855,7 @@ impl Zorbist {
 
         for (piece, board) in piece_boards.iter().enumerate() {
             for (_, square) in board.iter() {
-                hash ^= self.piece_boards[piece][square.to_usize()]
+                hash ^= self.piece_boards[piece][square.0 as usize]
             }
         }
 
@@ -873,7 +873,7 @@ impl Zorbist {
     }
 
     pub fn toggle_piece(&self, hash: u64, piece: &Piece, square: &Square) -> u64 {
-        hash ^ self.piece_boards[piece.to_usize()][square.to_usize()]
+        hash ^ self.piece_boards[piece.0 as usize][square.0 as usize]
     }
 
     pub fn toggle_side(&self, hash: u64) -> u64 {

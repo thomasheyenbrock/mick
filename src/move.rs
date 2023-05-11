@@ -41,32 +41,32 @@ pub struct Move(
 impl Move {
     pub fn all_capture_promotions(from: &Square, to: &Square) -> Vec<Self> {
         vec![
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b01_000000),
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b11_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b01_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b11_000000),
+            Self(from.0 | 0b10_000000, to.0 | 0b01_000000),
+            Self(from.0 | 0b10_000000, to.0 | 0b11_000000),
+            Self(from.0 | 0b11_000000, to.0 | 0b01_000000),
+            Self(from.0 | 0b11_000000, to.0 | 0b11_000000),
         ]
     }
 
     pub fn all_push_promotions(from: &Square, to: &Square) -> Vec<Self> {
         vec![
-            Self(from.to_u8() | 0b10_000000, to.to_u8()),
-            Self(from.to_u8() | 0b10_000000, to.to_u8() | 0b10_000000),
-            Self(from.to_u8() | 0b11_000000, to.to_u8()),
-            Self(from.to_u8() | 0b11_000000, to.to_u8() | 0b10_000000),
+            Self(from.0 | 0b10_000000, to.0),
+            Self(from.0 | 0b10_000000, to.0 | 0b10_000000),
+            Self(from.0 | 0b11_000000, to.0),
+            Self(from.0 | 0b11_000000, to.0 | 0b10_000000),
         ]
     }
 
     pub fn castle(&self) -> Option<Castle> {
         if self.0 & 0b11_000000 == 0b01_000000 {
-            Some(Castle::new((self.1 & 0b10_000000) >> 7))
+            Some(Castle((self.1 & 0b10_000000) >> 7))
         } else {
             None
         }
     }
 
     pub fn from(&self) -> Square {
-        Square::new(self.0 & 0b00_111111)
+        Square(self.0 & 0b00_111111)
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
@@ -78,35 +78,32 @@ impl Move {
     }
 
     pub fn new_castle(from: &Square, to: &Square, castle: &Castle) -> Self {
-        Self(
-            from.to_u8() | 0b01_000000,
-            to.to_u8() | (castle.to_u8() << 7),
-        )
+        Self(from.0 | 0b01_000000, to.0 | (castle.0 << 7))
     }
 
     pub fn new_capture(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8() | 0b01_000000)
+        Self(from.0, to.0 | 0b01_000000)
     }
     pub fn new_capture_en_passant(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8() | 0b11_000000)
+        Self(from.0, to.0 | 0b11_000000)
     }
 
     pub fn new_capture_promotion(from: &Square, to: &Square, piece: &PieceKind) -> Self {
-        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.to_usize()];
-        Self(from.to_u8() | flag_1, to.to_u8() | flag_2 | 0b01_000000)
+        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.0 as usize];
+        Self(from.0 | flag_1, to.0 | flag_2 | 0b01_000000)
     }
 
     pub fn new_push(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8())
+        Self(from.0, to.0)
     }
 
     pub fn new_push_double_pawn(from: &Square, to: &Square) -> Self {
-        Self(from.to_u8(), to.to_u8() | 0b10_000000)
+        Self(from.0, to.0 | 0b10_000000)
     }
 
     pub fn new_push_promotion(from: &Square, to: &Square, piece: &PieceKind) -> Self {
-        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.to_usize()];
-        Self(from.to_u8() | flag_1, to.to_u8() | flag_2)
+        let (flag_1, flag_2) = FLAG_FOR_PROMOTION_PIECE[piece.0 as usize];
+        Self(from.0 | flag_1, to.0 | flag_2)
     }
 
     pub fn promotion_piece_kind(&self) -> Option<PieceKind> {
@@ -124,7 +121,7 @@ impl Move {
     }
 
     pub fn to(&self) -> Square {
-        Square::new(self.1 & 0b00_111111)
+        Square(self.1 & 0b00_111111)
     }
 }
 
@@ -142,8 +139,8 @@ impl Display for Move {
         write!(
             f,
             "{}{}{}",
-            Square::new(self.0 & 63),
-            Square::new(self.1 & 63),
+            Square(self.0 & 63),
+            Square(self.1 & 63),
             if self.0 & 0b10_000000 == 0 {
                 ""
             } else {

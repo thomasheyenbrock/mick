@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Board(u64);
+pub struct Board(pub u64);
 
 impl Board {
     pub const EMPTY: Self = Self(0);
@@ -59,11 +59,11 @@ impl Board {
     }
 
     pub fn flip_square(&mut self, square: &Square) {
-        self.0 ^= 1 << square.to_usize()
+        self.0 ^= 1 << square.0
     }
 
     pub fn has(&self, square: &Square) -> bool {
-        self.0 & (1 << square.to_u8()) != 0
+        self.0 & (1 << square.0) != 0
     }
 
     pub fn iter(&self) -> BoardIterator {
@@ -88,10 +88,6 @@ impl Board {
         let attacks_two = attacks_right_two | attacks_left_two;
 
         Self((attacks_one << 16) | (attacks_one >> 16) | (attacks_two << 8) | (attacks_two >> 8))
-    }
-
-    pub fn new(i: u64) -> Self {
-        Self(i)
     }
 
     pub fn north_attacks(&self, empty_squares: &Self) -> Self {
@@ -200,7 +196,7 @@ impl Board {
     }
 
     pub fn to_square(&self) -> Square {
-        Square::new(self.0.trailing_zeros() as u8)
+        Square(self.0.trailing_zeros() as u8)
     }
 
     pub fn west_attacks(&self, empty_squares: &Self) -> Self {
@@ -253,7 +249,7 @@ impl Display for Board {
             f,
             "{}",
             grid_to_string(|s: Square| -> char {
-                if (self.0 >> s.to_u8()) & 1 != 0 {
+                if (self.0 >> s.0) & 1 != 0 {
                     'X'
                 } else {
                     ' '
@@ -284,7 +280,7 @@ impl Iterator for BoardIterator {
         let trailing = self.0.trailing_zeros() as u8;
         let board = 1 << trailing;
         self.0 ^= board;
-        Some((Board(board), Square::new(trailing)))
+        Some((Board(board), Square(trailing)))
     }
 }
 
@@ -9161,7 +9157,7 @@ mod tests {
     #[test]
     fn flips_square() {
         let mut board = Board::EMPTY;
-        let a1 = Square::new(0);
+        let a1 = Square(0);
 
         board.flip_square(&a1);
         assert_eq!(board, Board(0x0000_0000_0000_0001));
@@ -9179,7 +9175,7 @@ mod tests {
     fn iterates_over_all() {
         let mut iter = Board::ALL.iter();
         for i in 0..64 {
-            assert_eq!(iter.next(), Some((Board(1 << i), Square::new(i))));
+            assert_eq!(iter.next(), Some((Board(1 << i), Square(i))));
         }
         assert_eq!(iter.next(), None);
     }
@@ -9187,10 +9183,10 @@ mod tests {
     #[test]
     fn iterates_over_some() {
         let mut iter = Board(0x0001_0002_0004_0008).iter();
-        assert_eq!(iter.next(), Some((Board(1 << 3), Square::new(3))));
-        assert_eq!(iter.next(), Some((Board(1 << 18), Square::new(18))));
-        assert_eq!(iter.next(), Some((Board(1 << 33), Square::new(33))));
-        assert_eq!(iter.next(), Some((Board(1 << 48), Square::new(48))));
+        assert_eq!(iter.next(), Some((Board(1 << 3), Square(3))));
+        assert_eq!(iter.next(), Some((Board(1 << 18), Square(18))));
+        assert_eq!(iter.next(), Some((Board(1 << 33), Square(33))));
+        assert_eq!(iter.next(), Some((Board(1 << 48), Square(48))));
         assert_eq!(iter.next(), None);
     }
 

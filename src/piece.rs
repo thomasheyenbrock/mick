@@ -3,7 +3,7 @@ use crate::side::Side;
 const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Piece(u8);
+pub struct Piece(pub u8);
 
 impl Piece {
     pub const WHITE_KING: Self = Self(0);
@@ -25,11 +25,7 @@ impl Piece {
     }
 
     pub fn to_char(&self) -> char {
-        CHARS[self.to_usize()]
-    }
-
-    pub fn to_usize(&self) -> usize {
-        self.0 as usize
+        CHARS[self.0 as usize]
     }
 
     pub fn try_from_char(c: char) -> Result<Self, String> {
@@ -51,7 +47,7 @@ impl Piece {
     }
 }
 
-pub struct PieceKind(u8);
+pub struct PieceKind(pub u8);
 
 impl PieceKind {
     pub const KING: Self = Self(0);
@@ -63,10 +59,6 @@ impl PieceKind {
 
     pub fn to_piece(&self, side: &Side) -> Piece {
         Piece(2 * self.0 + side.0)
-    }
-
-    pub fn to_usize(&self) -> usize {
-        self.0 as usize
     }
 }
 

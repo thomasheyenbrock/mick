@@ -4,25 +4,16 @@ use std::{
     ops::{BitAnd, BitXor},
 };
 
-// TODO: benchmark if it's faster to just expose the internal value
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Castle(u8);
+pub struct Castle(pub u8);
 
 impl Castle {
     pub const KINGSIDE: Self = Self(0);
     pub const QUEENSIDE: Self = Self(1);
-
-    pub fn new(c: u8) -> Self {
-        Self(c)
-    }
-
-    pub fn to_u8(&self) -> u8 {
-        self.0
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CastlingRights(u8);
+pub struct CastlingRights(pub u8);
 
 impl CastlingRights {
     pub const NO_RIGHTS: Self = Self(0b0000);
