@@ -1,5 +1,4 @@
 // TODO: refactor square
-// TODO: refactor piece
 // TODO: refactor castle
 // TODO: refactor zorbist -> hash
 // TODO: refactor board

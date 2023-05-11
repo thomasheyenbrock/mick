@@ -1,6 +1,9 @@
 use crate::{
     castle::{Castle, CastlingRights},
-    piece::{Piece, PieceKind},
+    piece::{
+        Piece, BLACK_KING, BLACK_PAWN, BLACK_ROOK, NULL_PIECE, PAWN, WHITE_KING, WHITE_PAWN,
+        WHITE_ROOK,
+    },
     r#move::Move,
     side::{BLACK, WHITE},
     square::Square,
@@ -33,7 +36,7 @@ impl Position {
         let moved_piece_index = moved_piece.0 as usize;
 
         // Move the piece
-        self.pieces[from_square_index] = Piece::NONE;
+        self.pieces[from_square_index] = NULL_PIECE;
         self.piece_boards[moved_piece_index].flip_square(&from);
         self.side_boards[side_index].flip_square(&from);
         self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &moved_piece, &from);
@@ -52,7 +55,7 @@ impl Position {
 
         // Handle promotions
         if let Some(promotion_piece_kind) = m.promotion_piece_kind() {
-            let promotion_piece = promotion_piece_kind.to_piece(&self.side_to_move);
+            let promotion_piece = promotion_piece_kind.to_piece(self.side_to_move);
 
             self.pieces[to_square_index] = promotion_piece;
 
@@ -67,11 +70,11 @@ impl Position {
         if m.is_en_passant_capture() {
             if self.side_to_move == WHITE {
                 let captured_pawn = Square(to.0 - 8);
-                self.piece_boards[Piece::BLACK_PAWN.0 as usize].flip_square(&captured_pawn);
+                self.piece_boards[BLACK_PAWN.0 as usize].flip_square(&captured_pawn);
                 self.side_boards[BLACK.0 as usize].flip_square(&captured_pawn);
             } else {
                 let captured_pawn = Square(to.0 + 8);
-                self.piece_boards[Piece::WHITE_PAWN.0 as usize].flip_square(&captured_pawn);
+                self.piece_boards[WHITE_PAWN.0 as usize].flip_square(&captured_pawn);
                 self.side_boards[WHITE.0 as usize].flip_square(&captured_pawn);
             };
         }
@@ -94,10 +97,10 @@ impl Position {
         // Handle castles
         if let Some(castle) = m.castle() {
             let (rook, rook_from_index, rook_to_index) = match (castle, self.side_to_move) {
-                (Castle::KINGSIDE, WHITE) => (Piece::WHITE_ROOK, 7, 5),
-                (Castle::QUEENSIDE, WHITE) => (Piece::WHITE_ROOK, 0, 3),
-                (Castle::KINGSIDE, BLACK) => (Piece::BLACK_ROOK, 63, 61),
-                (Castle::QUEENSIDE, BLACK) => (Piece::BLACK_ROOK, 56, 59),
+                (Castle::KINGSIDE, WHITE) => (WHITE_ROOK, 7, 5),
+                (Castle::QUEENSIDE, WHITE) => (WHITE_ROOK, 0, 3),
+                (Castle::KINGSIDE, BLACK) => (BLACK_ROOK, 63, 61),
+                (Castle::QUEENSIDE, BLACK) => (BLACK_ROOK, 56, 59),
                 _ => unreachable!(),
             };
 
@@ -105,7 +108,7 @@ impl Position {
             let rook_from_square = Square(rook_from_index as u8);
             let rook_to_square = Square(rook_to_index as u8);
 
-            self.pieces[rook_from_index] = Piece::NONE;
+            self.pieces[rook_from_index] = NULL_PIECE;
             self.piece_boards[rook_index].flip_square(&rook_from_square);
             self.side_boards[side_index].flip_square(&rook_from_square);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &rook, &rook_from_square);
@@ -115,40 +118,40 @@ impl Position {
             self.side_boards[side_index].flip_square(&rook_to_square);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &rook, &rook_to_square);
         }
-        if moved_piece == Piece::WHITE_KING {
+        if moved_piece == WHITE_KING {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::WHITE),
             );
             self.state.castling_rights = self.state.castling_rights & CastlingRights::BLACK;
-        } else if moved_piece == Piece::BLACK_KING {
+        } else if moved_piece == BLACK_KING {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::BLACK),
             );
             self.state.castling_rights = self.state.castling_rights & CastlingRights::WHITE;
-        } else if from_square_index == 7 && moved_piece == Piece::WHITE_ROOK {
+        } else if from_square_index == 7 && moved_piece == WHITE_ROOK {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::WHITE_KINGSIDE),
             );
             self.state.castling_rights =
                 self.state.castling_rights & CastlingRights::NOT_WHITE_KINGSIDE;
-        } else if from_square_index == 63 && moved_piece == Piece::BLACK_ROOK {
+        } else if from_square_index == 63 && moved_piece == BLACK_ROOK {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::BLACK_KINGSIDE),
             );
             self.state.castling_rights =
                 self.state.castling_rights & CastlingRights::NOT_BLACK_KINGSIDE;
-        } else if from_square_index == 0 && moved_piece == Piece::WHITE_ROOK {
+        } else if from_square_index == 0 && moved_piece == WHITE_ROOK {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::WHITE_QUEENSIDE),
             );
             self.state.castling_rights =
                 self.state.castling_rights & CastlingRights::NOT_WHITE_QUEENSIDE;
-        } else if from_square_index == 56 && moved_piece == Piece::BLACK_ROOK {
+        } else if from_square_index == 56 && moved_piece == BLACK_ROOK {
             self.hash = Zorbist::DEFAULT.toggle_castling_rights(
                 self.hash,
                 &(self.state.castling_rights & CastlingRights::BLACK_QUEENSIDE),
@@ -157,9 +160,9 @@ impl Position {
                 self.state.castling_rights & CastlingRights::NOT_BLACK_QUEENSIDE;
         }
 
-        self.state.halfmove_clock = if moved_piece == Piece::WHITE_PAWN
-            || moved_piece == Piece::BLACK_PAWN
-            || captured_piece != Piece::NONE
+        self.state.halfmove_clock = if moved_piece == WHITE_PAWN
+            || moved_piece == BLACK_PAWN
+            || captured_piece != NULL_PIECE
         {
             0
         } else {
@@ -218,7 +221,7 @@ impl Position {
 
         // Handle promotions
         if m.promotion_piece_kind().is_some() {
-            let pawn = PieceKind::PAWN.to_piece(&self.side_to_move);
+            let pawn = PAWN.to_piece(self.side_to_move);
 
             self.pieces[from_square_index] = pawn;
 
@@ -233,11 +236,11 @@ impl Position {
         if m.is_en_passant_capture() {
             if self.side_to_move == WHITE {
                 let captured_pawn = Square(to.0 - 8);
-                self.piece_boards[Piece::BLACK_PAWN.0 as usize].flip_square(&captured_pawn);
+                self.piece_boards[BLACK_PAWN.0 as usize].flip_square(&captured_pawn);
                 self.side_boards[BLACK.0 as usize].flip_square(&captured_pawn);
             } else {
                 let captured_pawn = Square(to.0 + 8);
-                self.piece_boards[Piece::WHITE_PAWN.0 as usize].flip_square(&captured_pawn);
+                self.piece_boards[WHITE_PAWN.0 as usize].flip_square(&captured_pawn);
                 self.side_boards[WHITE.0 as usize].flip_square(&captured_pawn);
             };
         }
@@ -251,10 +254,10 @@ impl Position {
         // Handle castles
         if let Some(castle) = m.castle() {
             let (rook, rook_from_index, rook_to_index) = match (castle, self.side_to_move) {
-                (Castle::KINGSIDE, WHITE) => (Piece::WHITE_ROOK, 7, 5),
-                (Castle::QUEENSIDE, WHITE) => (Piece::WHITE_ROOK, 0, 3),
-                (Castle::KINGSIDE, BLACK) => (Piece::BLACK_ROOK, 63, 61),
-                (Castle::QUEENSIDE, BLACK) => (Piece::BLACK_ROOK, 56, 59),
+                (Castle::KINGSIDE, WHITE) => (WHITE_ROOK, 7, 5),
+                (Castle::QUEENSIDE, WHITE) => (WHITE_ROOK, 0, 3),
+                (Castle::KINGSIDE, BLACK) => (BLACK_ROOK, 63, 61),
+                (Castle::QUEENSIDE, BLACK) => (BLACK_ROOK, 56, 59),
                 _ => unreachable!(),
             };
 
@@ -267,7 +270,7 @@ impl Position {
             self.side_boards[side_index].flip_square(&rook_from_square);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &rook, &rook_from_square);
 
-            self.pieces[rook_to_index] = Piece::NONE;
+            self.pieces[rook_to_index] = NULL_PIECE;
             self.piece_boards[rook_index].flip_square(&rook_to_square);
             self.side_boards[side_index].flip_square(&rook_to_square);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &rook, &rook_to_square);
@@ -289,7 +292,10 @@ mod tests {
     use crate::{
         board::Board,
         castle::{Castle, CastlingRights},
-        piece::{Piece, PieceKind},
+        piece::{
+            BLACK_PAWN, NULL_PIECE, QUEEN, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN,
+            WHITE_QUEEN, WHITE_ROOK,
+        },
         position::Position,
         r#move::Move,
         side::{BLACK, WHITE},
@@ -302,10 +308,10 @@ mod tests {
         let m = Move::new_push(&Square(0), &Square(8));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[0], Piece::NONE);
-        assert_eq!(p2.pieces[8], Piece::WHITE_KING);
+        assert_eq!(p2.pieces[0], NULL_PIECE);
+        assert_eq!(p2.pieces[8], WHITE_KING);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KING.0 as usize],
+            p2.piece_boards[WHITE_KING.0 as usize],
             Board(0x0000_0000_0000_0100)
         );
         assert_eq!(
@@ -328,17 +334,17 @@ mod tests {
         let m = Move::new_capture(&Square(0), &Square(8));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[0], Piece::NONE);
-        assert_eq!(p2.pieces[8], Piece::WHITE_KING);
+        assert_eq!(p2.pieces[0], NULL_PIECE);
+        assert_eq!(p2.pieces[8], WHITE_KING);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KING.0 as usize],
+            p2.piece_boards[WHITE_KING.0 as usize],
             Board(0x0000_0000_0000_0100)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x0000_0000_0000_0100)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -356,16 +362,16 @@ mod tests {
         let m = Move::new_castle(&Square(4), &Square(6), &Castle::KINGSIDE);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[4], Piece::NONE);
-        assert_eq!(p2.pieces[7], Piece::NONE);
-        assert_eq!(p2.pieces[6], Piece::WHITE_KING);
-        assert_eq!(p2.pieces[5], Piece::WHITE_ROOK);
+        assert_eq!(p2.pieces[4], NULL_PIECE);
+        assert_eq!(p2.pieces[7], NULL_PIECE);
+        assert_eq!(p2.pieces[6], WHITE_KING);
+        assert_eq!(p2.pieces[5], WHITE_ROOK);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KING.0 as usize],
+            p2.piece_boards[WHITE_KING.0 as usize],
             Board(0x0000_0000_0000_0040)
         );
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_ROOK.0 as usize],
+            p2.piece_boards[WHITE_ROOK.0 as usize],
             Board(0x0000_0000_0000_0021)
         );
         assert_eq!(
@@ -388,16 +394,16 @@ mod tests {
         let m = Move::new_castle(&Square(4), &Square(2), &Castle::QUEENSIDE);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[4], Piece::NONE);
-        assert_eq!(p2.pieces[0], Piece::NONE);
-        assert_eq!(p2.pieces[2], Piece::WHITE_KING);
-        assert_eq!(p2.pieces[3], Piece::WHITE_ROOK);
+        assert_eq!(p2.pieces[4], NULL_PIECE);
+        assert_eq!(p2.pieces[0], NULL_PIECE);
+        assert_eq!(p2.pieces[2], WHITE_KING);
+        assert_eq!(p2.pieces[3], WHITE_ROOK);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KING.0 as usize],
+            p2.piece_boards[WHITE_KING.0 as usize],
             Board(0x0000_0000_0000_0004)
         );
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_ROOK.0 as usize],
+            p2.piece_boards[WHITE_ROOK.0 as usize],
             Board(0x0000_0000_0000_0088)
         );
         assert_eq!(
@@ -420,10 +426,10 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[62], Piece::WHITE_QUEEN);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[62], WHITE_QUEEN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_QUEEN.0 as usize],
+            p2.piece_boards[WHITE_QUEEN.0 as usize],
             Board(0x4000_0000_0000_0000)
         );
         assert_eq!(
@@ -446,17 +452,17 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[62], Piece::WHITE_QUEEN);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[62], WHITE_QUEEN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_QUEEN.0 as usize],
+            p2.piece_boards[WHITE_QUEEN.0 as usize],
             Board(0x4000_0000_0000_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x4000_0000_0000_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -474,10 +480,10 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(56));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[56], Piece::WHITE_ROOK);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[56], WHITE_ROOK);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_ROOK.0 as usize],
+            p2.piece_boards[WHITE_ROOK.0 as usize],
             Board(0x0100_0000_0000_0000)
         );
         assert_eq!(
@@ -500,17 +506,17 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(56));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[56], Piece::WHITE_ROOK);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[56], WHITE_ROOK);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_ROOK.0 as usize],
+            p2.piece_boards[WHITE_ROOK.0 as usize],
             Board(0x0100_0000_0000_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x0100_0000_0000_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -528,10 +534,10 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[62], Piece::WHITE_BISHOP);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[62], WHITE_BISHOP);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_BISHOP.0 as usize],
+            p2.piece_boards[WHITE_BISHOP.0 as usize],
             Board(0x4000_0000_0000_0000)
         );
         assert_eq!(
@@ -554,17 +560,17 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[62], Piece::WHITE_BISHOP);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[62], WHITE_BISHOP);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_BISHOP.0 as usize],
+            p2.piece_boards[WHITE_BISHOP.0 as usize],
             Board(0x4000_0000_0000_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x4000_0000_0000_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -582,10 +588,10 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(25));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[25], Piece::WHITE_KNIGHT);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[25], WHITE_KNIGHT);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KNIGHT.0 as usize],
+            p2.piece_boards[WHITE_KNIGHT.0 as usize],
             Board(0x0000_0000_0200_0000)
         );
         assert_eq!(
@@ -608,17 +614,17 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(25));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[25], Piece::WHITE_KNIGHT);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[25], WHITE_KNIGHT);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_KNIGHT.0 as usize],
+            p2.piece_boards[WHITE_KNIGHT.0 as usize],
             Board(0x0000_0000_0200_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x0000_0000_0200_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -636,10 +642,10 @@ mod tests {
         let m = Move::new_push(&Square(8), &Square(16));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[16], Piece::WHITE_PAWN);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[16], WHITE_PAWN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_PAWN.0 as usize],
+            p2.piece_boards[WHITE_PAWN.0 as usize],
             Board(0x0000_0000_0001_0000)
         );
         assert_eq!(
@@ -662,10 +668,10 @@ mod tests {
         let m = Move::new_push_double_pawn(&Square(8), &Square(24));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[24], Piece::WHITE_PAWN);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[24], WHITE_PAWN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_PAWN.0 as usize],
+            p2.piece_boards[WHITE_PAWN.0 as usize],
             Board(0x0000_0000_0100_0000)
         );
         assert_eq!(
@@ -685,14 +691,14 @@ mod tests {
     #[test]
     fn pawn_push_promotion() {
         let p1 = Position::from_fen("8/P7/8/8/8/8/8/K7 w - - 0 1");
-        let m = Move::new_push_promotion(&Square(48), &Square(56), &PieceKind::QUEEN);
+        let m = Move::new_push_promotion(&Square(48), &Square(56), &QUEEN);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[48], Piece::NONE);
-        assert_eq!(p2.pieces[56], Piece::WHITE_QUEEN);
-        assert_eq!(p2.piece_boards[Piece::WHITE_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.pieces[48], NULL_PIECE);
+        assert_eq!(p2.pieces[56], WHITE_QUEEN);
+        assert_eq!(p2.piece_boards[WHITE_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_QUEEN.0 as usize],
+            p2.piece_boards[WHITE_QUEEN.0 as usize],
             Board(0x0100_0000_0000_0000)
         );
         assert_eq!(
@@ -715,17 +721,17 @@ mod tests {
         let m = Move::new_capture(&Square(8), &Square(17));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[8], Piece::NONE);
-        assert_eq!(p2.pieces[17], Piece::WHITE_PAWN);
+        assert_eq!(p2.pieces[8], NULL_PIECE);
+        assert_eq!(p2.pieces[17], WHITE_PAWN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_PAWN.0 as usize],
+            p2.piece_boards[WHITE_PAWN.0 as usize],
             Board(0x0000_0000_0002_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x0000_0000_0002_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -740,14 +746,14 @@ mod tests {
     #[test]
     fn pawn_capture_promotion() {
         let p1 = Position::from_fen("1p6/P7/8/8/8/8/8/K7 w - - 0 1");
-        let m = Move::new_capture_promotion(&Square(48), &Square(57), &PieceKind::QUEEN);
+        let m = Move::new_capture_promotion(&Square(48), &Square(57), &QUEEN);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[48], Piece::NONE);
-        assert_eq!(p2.pieces[57], Piece::WHITE_QUEEN);
-        assert_eq!(p2.piece_boards[Piece::WHITE_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.pieces[48], NULL_PIECE);
+        assert_eq!(p2.pieces[57], WHITE_QUEEN);
+        assert_eq!(p2.piece_boards[WHITE_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_QUEEN.0 as usize],
+            p2.piece_boards[WHITE_QUEEN.0 as usize],
             Board(0x0200_0000_0000_0000)
         );
         assert_eq!(
@@ -770,18 +776,18 @@ mod tests {
         let m = Move::new_capture_en_passant(&Square(32), &Square(41));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.pieces[32], Piece::NONE);
-        assert_eq!(p2.pieces[40], Piece::NONE);
-        assert_eq!(p2.pieces[41], Piece::WHITE_PAWN);
+        assert_eq!(p2.pieces[32], NULL_PIECE);
+        assert_eq!(p2.pieces[40], NULL_PIECE);
+        assert_eq!(p2.pieces[41], WHITE_PAWN);
         assert_eq!(
-            p2.piece_boards[Piece::WHITE_PAWN.0 as usize],
+            p2.piece_boards[WHITE_PAWN.0 as usize],
             Board(0x0000_0200_0000_0000)
         );
         assert_eq!(
             p2.side_boards[WHITE.0 as usize],
             Board(0x0000_0200_0000_0001)
         );
-        assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
         assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);

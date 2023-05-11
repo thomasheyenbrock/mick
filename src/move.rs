@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
-use crate::{castle::Castle, piece::PieceKind, square::Square};
+use crate::{
+    castle::Castle,
+    piece::{PieceKind, BISHOP, KNIGHT, QUEEN, ROOK},
+    square::Square,
+};
 
 /// The first two bytes of the first number and the first two bytes of the second number encode metadata about the move
 /// that was performed:
@@ -111,10 +115,10 @@ impl Move {
             None
         } else {
             match (self.0 & 0b01_000000, self.1 & 0b10_000000) {
-                (0b00_000000, 0b00_000000) => Some(PieceKind::QUEEN),
-                (0b00_000000, 0b10_000000) => Some(PieceKind::ROOK),
-                (0b01_000000, 0b00_000000) => Some(PieceKind::BISHOP),
-                (0b01_000000, 0b10_000000) => Some(PieceKind::KNIGHT),
+                (0b00_000000, 0b00_000000) => Some(QUEEN),
+                (0b00_000000, 0b10_000000) => Some(ROOK),
+                (0b01_000000, 0b00_000000) => Some(BISHOP),
+                (0b01_000000, 0b10_000000) => Some(KNIGHT),
                 _ => unreachable!(),
             }
         }

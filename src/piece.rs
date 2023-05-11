@@ -1,96 +1,120 @@
+use std::fmt::Display;
+
 use crate::side::Side;
 
 const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PieceKind(pub u8);
+
+impl PieceKind {
+    pub fn to_piece(self, side: Side) -> Piece {
+        Piece((self.0 << 1) | side.0)
+    }
+}
+
+impl Display for PieceKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", CHARS[(self.0 as usize) << 1])
+    }
+}
+
+pub const KING: PieceKind = PieceKind(0);
+pub const QUEEN: PieceKind = PieceKind(1);
+pub const ROOK: PieceKind = PieceKind(2);
+pub const BISHOP: PieceKind = PieceKind(3);
+pub const KNIGHT: PieceKind = PieceKind(4);
+pub const PAWN: PieceKind = PieceKind(5);
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Piece(pub u8);
 
 impl Piece {
-    pub const WHITE_KING: Self = Self(0);
-    pub const BLACK_KING: Self = Self(1);
-    pub const WHITE_QUEEN: Self = Self(2);
-    pub const BLACK_QUEEN: Self = Self(3);
-    pub const WHITE_ROOK: Self = Self(4);
-    pub const BLACK_ROOK: Self = Self(5);
-    pub const WHITE_BISHOP: Self = Self(6);
-    pub const BLACK_BISHOP: Self = Self(7);
-    pub const WHITE_KNIGHT: Self = Self(8);
-    pub const BLACK_KNIGHT: Self = Self(9);
-    pub const WHITE_PAWN: Self = Self(10);
-    pub const BLACK_PAWN: Self = Self(11);
-    pub const NONE: Self = Self(12);
-
     pub fn is_some(&self) -> bool {
-        self.0 <= 11
+        *self != NULL_PIECE
     }
 
     pub fn to_char(&self) -> char {
         CHARS[self.0 as usize]
     }
 
-    pub fn try_from_char(c: char) -> Result<Self, String> {
+    pub fn try_from_char(c: char) -> Result<Piece, String> {
         match c {
-            'K' => Ok(Self(0)),
-            'k' => Ok(Self(1)),
-            'Q' => Ok(Self(2)),
-            'q' => Ok(Self(3)),
-            'R' => Ok(Self(4)),
-            'r' => Ok(Self(5)),
-            'B' => Ok(Self(6)),
-            'b' => Ok(Self(7)),
-            'N' => Ok(Self(8)),
-            'n' => Ok(Self(9)),
-            'P' => Ok(Self(10)),
-            'p' => Ok(Self(11)),
-            _ => Err(format!("Invalid piece {c}")),
+            'K' => Ok(Piece(0)),
+            'k' => Ok(Piece(1)),
+            'Q' => Ok(Piece(2)),
+            'q' => Ok(Piece(3)),
+            'R' => Ok(Piece(4)),
+            'r' => Ok(Piece(5)),
+            'B' => Ok(Piece(6)),
+            'b' => Ok(Piece(7)),
+            'N' => Ok(Piece(8)),
+            'n' => Ok(Piece(9)),
+            'P' => Ok(Piece(10)),
+            'p' => Ok(Piece(11)),
+            _ => Err(format!("Invalid piece: {}", c)),
         }
     }
 }
 
-pub struct PieceKind(pub u8);
+pub const WHITE_KING: Piece = Piece(0);
+pub const BLACK_KING: Piece = Piece(1);
+#[cfg(test)]
+pub const WHITE_QUEEN: Piece = Piece(2);
+#[cfg(test)]
+pub const BLACK_QUEEN: Piece = Piece(3);
+pub const WHITE_ROOK: Piece = Piece(4);
+pub const BLACK_ROOK: Piece = Piece(5);
+#[cfg(test)]
+pub const WHITE_BISHOP: Piece = Piece(6);
+#[cfg(test)]
+pub const BLACK_BISHOP: Piece = Piece(7);
+#[cfg(test)]
+pub const WHITE_KNIGHT: Piece = Piece(8);
+#[cfg(test)]
+pub const BLACK_KNIGHT: Piece = Piece(9);
+pub const WHITE_PAWN: Piece = Piece(10);
+pub const BLACK_PAWN: Piece = Piece(11);
+pub const NULL_PIECE: Piece = Piece(12);
 
-impl PieceKind {
-    pub const KING: Self = Self(0);
-    pub const QUEEN: Self = Self(1);
-    pub const ROOK: Self = Self(2);
-    pub const BISHOP: Self = Self(3);
-    pub const KNIGHT: Self = Self(4);
-    pub const PAWN: Self = Self(5);
-
-    pub fn to_piece(&self, side: &Side) -> Piece {
-        Piece(2 * self.0 + side.0)
+impl Display for Piece {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_char())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::piece::Piece;
+    use crate::piece::{
+        Piece, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK,
+        WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK,
+    };
 
     #[test]
     fn try_from_valid() {
-        assert_eq!(Piece::try_from_char('K'), Ok(Piece::WHITE_KING));
-        assert_eq!(Piece::try_from_char('k'), Ok(Piece::BLACK_KING));
-        assert_eq!(Piece::try_from_char('Q'), Ok(Piece::WHITE_QUEEN));
-        assert_eq!(Piece::try_from_char('q'), Ok(Piece::BLACK_QUEEN));
-        assert_eq!(Piece::try_from_char('R'), Ok(Piece::WHITE_ROOK));
-        assert_eq!(Piece::try_from_char('r'), Ok(Piece::BLACK_ROOK));
-        assert_eq!(Piece::try_from_char('B'), Ok(Piece::WHITE_BISHOP));
-        assert_eq!(Piece::try_from_char('b'), Ok(Piece::BLACK_BISHOP));
-        assert_eq!(Piece::try_from_char('N'), Ok(Piece::WHITE_KNIGHT));
-        assert_eq!(Piece::try_from_char('n'), Ok(Piece::BLACK_KNIGHT));
-        assert_eq!(Piece::try_from_char('P'), Ok(Piece::WHITE_PAWN));
-        assert_eq!(Piece::try_from_char('p'), Ok(Piece::BLACK_PAWN));
+        assert_eq!(Piece::try_from_char('K'), Ok(WHITE_KING));
+        assert_eq!(Piece::try_from_char('k'), Ok(BLACK_KING));
+        assert_eq!(Piece::try_from_char('Q'), Ok(WHITE_QUEEN));
+        assert_eq!(Piece::try_from_char('q'), Ok(BLACK_QUEEN));
+        assert_eq!(Piece::try_from_char('R'), Ok(WHITE_ROOK));
+        assert_eq!(Piece::try_from_char('r'), Ok(BLACK_ROOK));
+        assert_eq!(Piece::try_from_char('B'), Ok(WHITE_BISHOP));
+        assert_eq!(Piece::try_from_char('b'), Ok(BLACK_BISHOP));
+        assert_eq!(Piece::try_from_char('N'), Ok(WHITE_KNIGHT));
+        assert_eq!(Piece::try_from_char('n'), Ok(BLACK_KNIGHT));
+        assert_eq!(Piece::try_from_char('P'), Ok(WHITE_PAWN));
+        assert_eq!(Piece::try_from_char('p'), Ok(BLACK_PAWN));
     }
 
     #[test]
     fn try_from_invalid() {
         assert_eq!(
             Piece::try_from_char('-'),
-            Err(String::from("Invalid piece -"))
+            Err(String::from("Invalid piece: -"))
         );
         assert_eq!(
             Piece::try_from_char('1'),
-            Err(String::from("Invalid piece 1"))
+            Err(String::from("Invalid piece: 1"))
         );
     }
 }

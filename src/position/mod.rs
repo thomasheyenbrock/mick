@@ -6,7 +6,7 @@ use self::zorbist::Zorbist;
 use crate::{
     board::{Board, RANKS},
     castle::{CastlingRights, CASTLE_BY_SIDE},
-    piece::{Piece, PieceKind},
+    piece::{Piece, BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     r#move::Move,
     side::{Side, WHITE},
     square::Square,
@@ -49,7 +49,7 @@ impl Position {
         let not_attacked = !attacked;
 
         // King moves
-        let king = self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).0 as usize];
+        let king = self.piece_boards[KING.to_piece(self.side_to_move).0 as usize];
         let king_square = king.to_square();
         let king_moves = king.king_attacks();
         for (_, to) in (king_moves & capture_mask & not_attacked).iter() {
@@ -69,12 +69,9 @@ impl Position {
 
                 let checker_square = checkers.to_square();
 
-                let queen =
-                    self.piece_boards[PieceKind::QUEEN.to_piece(&!self.side_to_move).0 as usize];
-                let rook =
-                    self.piece_boards[PieceKind::ROOK.to_piece(&!self.side_to_move).0 as usize];
-                let bishop =
-                    self.piece_boards[PieceKind::BISHOP.to_piece(&!self.side_to_move).0 as usize];
+                let queen = self.piece_boards[QUEEN.to_piece(!self.side_to_move).0 as usize];
+                let rook = self.piece_boards[ROOK.to_piece(!self.side_to_move).0 as usize];
+                let bishop = self.piece_boards[BISHOP.to_piece(!self.side_to_move).0 as usize];
                 let sliders = queen | rook | bishop;
 
                 if sliders & checkers == Board::EMPTY {
@@ -103,9 +100,9 @@ impl Position {
         }
 
         // Slider moves
-        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&self.side_to_move).0 as usize];
-        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&self.side_to_move).0 as usize];
-        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&self.side_to_move).0 as usize];
+        let queen = self.piece_boards[QUEEN.to_piece(self.side_to_move).0 as usize];
+        let rook = self.piece_boards[ROOK.to_piece(self.side_to_move).0 as usize];
+        let bishop = self.piece_boards[BISHOP.to_piece(self.side_to_move).0 as usize];
 
         // Non-pinned straight sliders
         for (from_board, from) in ((queen | rook) & !pinned).iter() {
@@ -154,7 +151,7 @@ impl Position {
         }
 
         // Knight moves (pinned knights can't move)
-        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&self.side_to_move).0 as usize];
+        let knight = self.piece_boards[KNIGHT.to_piece(self.side_to_move).0 as usize];
         for (from_board, from) in (knight & !pinned).iter() {
             let attacks = from_board.knight_attacks();
             for (_, to) in (attacks & capture_mask).iter() {
@@ -166,7 +163,7 @@ impl Position {
         }
 
         // Pawn moves
-        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).0 as usize];
+        let pawn = self.piece_boards[PAWN.to_piece(self.side_to_move).0 as usize];
         // TODO: make this an array lookup (if it's faster)
         let (rotate, double_push_rank_index, promotion_rank_index) = if self.side_to_move == WHITE {
             (8, 3, 7)
@@ -252,10 +249,8 @@ impl Position {
                             false
                         } else {
                             let opponent = !self.side_to_move;
-                            let queen =
-                                self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).0 as usize];
-                            let rook =
-                                self.piece_boards[PieceKind::ROOK.to_piece(&opponent).0 as usize];
+                            let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
+                            let rook = self.piece_boards[ROOK.to_piece(opponent).0 as usize];
                             let potential_attackers = queen | rook;
 
                             let mut occupied = occupied;
@@ -284,19 +279,18 @@ impl Position {
     }
 
     fn metadata(&self) -> (Board, Board, Board, Board) {
-        let friendly_king =
-            self.piece_boards[PieceKind::KING.to_piece(&self.side_to_move).0 as usize];
+        let friendly_king = self.piece_boards[KING.to_piece(self.side_to_move).0 as usize];
 
         let occupied = self.side_boards[0] | self.side_boards[1];
         let empty_squares = !(self.side_boards[0] | self.side_boards[1]) ^ friendly_king;
         let opponent = !self.side_to_move;
 
-        let king = self.piece_boards[PieceKind::KING.to_piece(&opponent).0 as usize];
-        let queen = self.piece_boards[PieceKind::QUEEN.to_piece(&opponent).0 as usize];
-        let rook = self.piece_boards[PieceKind::ROOK.to_piece(&opponent).0 as usize];
-        let bishop = self.piece_boards[PieceKind::BISHOP.to_piece(&opponent).0 as usize];
-        let knight = self.piece_boards[PieceKind::KNIGHT.to_piece(&opponent).0 as usize];
-        let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&opponent).0 as usize];
+        let king = self.piece_boards[KING.to_piece(opponent).0 as usize];
+        let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
+        let rook = self.piece_boards[ROOK.to_piece(opponent).0 as usize];
+        let bishop = self.piece_boards[BISHOP.to_piece(opponent).0 as usize];
+        let knight = self.piece_boards[KNIGHT.to_piece(opponent).0 as usize];
+        let pawn = self.piece_boards[PAWN.to_piece(opponent).0 as usize];
 
         let straight = queen | rook;
         let diagonal = queen | bishop;
