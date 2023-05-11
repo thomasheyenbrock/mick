@@ -1,11 +1,10 @@
 mod fen;
 mod r#move;
-mod zorbist;
 
-use self::zorbist::Zorbist;
 use crate::{
     board::{Board, RANKS},
     castle::{CastlingRights, CASTLE_BY_SIDE},
+    hash::DEFAULT_ZOBRISH_HASH,
     piece::{Piece, BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     r#move::Move,
     side::{Side, WHITE},
@@ -16,10 +15,11 @@ use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct State {
-    castling_rights: CastlingRights,
-    en_passant_target: Option<Square>,
-    halfmove_clock: u32,
-    fullmove_number: u32,
+    pub side_to_move: Side,
+    pub castling_rights: CastlingRights,
+    pub en_passant_target: Option<Square>,
+    pub halfmove_clock: u32,
+    pub fullmove_number: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -27,12 +27,15 @@ pub struct Position {
     pieces: [Piece; 64],
     piece_boards: [Board; 12],
     side_boards: [Board; 2],
-    side_to_move: Side,
     state: State,
     hash: u64,
 }
 
 impl Position {
+    pub fn at(&self, sq: Square) -> Piece {
+        unsafe { return *self.pieces.get_unchecked(sq.0 as usize) }
+    }
+
     pub fn legal_moves(&self) -> Vec<Move> {
         // TODO: find out the best value for capacity with benchmarks
         let mut legal_moves = Vec::<Move>::with_capacity(60);
@@ -42,14 +45,14 @@ impl Position {
         let empty_squares = !occupied;
 
         // Opponent pieces
-        let opponent_side = !self.side_to_move;
+        let opponent_side = !self.state.side_to_move;
         let mut capture_mask = self.side_boards[opponent_side.0 as usize];
         // Empty squares
         let mut push_mask = empty_squares;
         let not_attacked = !attacked;
 
         // King moves
-        let king = self.piece_boards[KING.to_piece(self.side_to_move).0 as usize];
+        let king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
         let king_square = king.to_square();
         let king_moves = king.king_attacks();
         for (_, to) in (king_moves & capture_mask & not_attacked).iter() {
@@ -69,9 +72,10 @@ impl Position {
 
                 let checker_square = checkers.to_square();
 
-                let queen = self.piece_boards[QUEEN.to_piece(!self.side_to_move).0 as usize];
-                let rook = self.piece_boards[ROOK.to_piece(!self.side_to_move).0 as usize];
-                let bishop = self.piece_boards[BISHOP.to_piece(!self.side_to_move).0 as usize];
+                let queen = self.piece_boards[QUEEN.to_piece(!self.state.side_to_move).0 as usize];
+                let rook = self.piece_boards[ROOK.to_piece(!self.state.side_to_move).0 as usize];
+                let bishop =
+                    self.piece_boards[BISHOP.to_piece(!self.state.side_to_move).0 as usize];
                 let sliders = queen | rook | bishop;
 
                 if sliders & checkers == Board::EMPTY {
@@ -89,7 +93,7 @@ impl Position {
 
         // Castles
         for (castle, castling_rights, to, blocking, safe) in
-            CASTLE_BY_SIDE[self.side_to_move.0 as usize]
+            CASTLE_BY_SIDE[self.state.side_to_move.0 as usize]
         {
             if self.state.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
                 && occupied & blocking == Board::EMPTY
@@ -100,9 +104,9 @@ impl Position {
         }
 
         // Slider moves
-        let queen = self.piece_boards[QUEEN.to_piece(self.side_to_move).0 as usize];
-        let rook = self.piece_boards[ROOK.to_piece(self.side_to_move).0 as usize];
-        let bishop = self.piece_boards[BISHOP.to_piece(self.side_to_move).0 as usize];
+        let queen = self.piece_boards[QUEEN.to_piece(self.state.side_to_move).0 as usize];
+        let rook = self.piece_boards[ROOK.to_piece(self.state.side_to_move).0 as usize];
+        let bishop = self.piece_boards[BISHOP.to_piece(self.state.side_to_move).0 as usize];
 
         // Non-pinned straight sliders
         for (from_board, from) in ((queen | rook) & !pinned).iter() {
@@ -151,7 +155,7 @@ impl Position {
         }
 
         // Knight moves (pinned knights can't move)
-        let knight = self.piece_boards[KNIGHT.to_piece(self.side_to_move).0 as usize];
+        let knight = self.piece_boards[KNIGHT.to_piece(self.state.side_to_move).0 as usize];
         for (from_board, from) in (knight & !pinned).iter() {
             let attacks = from_board.knight_attacks();
             for (_, to) in (attacks & capture_mask).iter() {
@@ -163,13 +167,14 @@ impl Position {
         }
 
         // Pawn moves
-        let pawn = self.piece_boards[PAWN.to_piece(self.side_to_move).0 as usize];
+        let pawn = self.piece_boards[PAWN.to_piece(self.state.side_to_move).0 as usize];
         // TODO: make this an array lookup (if it's faster)
-        let (rotate, double_push_rank_index, promotion_rank_index) = if self.side_to_move == WHITE {
-            (8, 3, 7)
-        } else {
-            (56, 4, 0)
-        };
+        let (rotate, double_push_rank_index, promotion_rank_index) =
+            if self.state.side_to_move == WHITE {
+                (8, 3, 7)
+            } else {
+                (56, 4, 0)
+            };
 
         // Non-pinned pawns
         for (from_board, from) in (pawn & !pinned).iter() {
@@ -195,7 +200,8 @@ impl Position {
             }
 
             // Captures
-            for (_, to) in (from_board.pawn_attacks(&self.side_to_move) & capture_mask).iter() {
+            for (_, to) in (from_board.pawn_attacks(&self.state.side_to_move) & capture_mask).iter()
+            {
                 if to.rank_index() == promotion_rank_index {
                     legal_moves.push(Move::new_capture_promotion(from, to, QUEEN));
                     legal_moves.push(Move::new_capture_promotion(from, to, ROOK));
@@ -228,7 +234,8 @@ impl Position {
         let diagonals = king_square.diagonal_rays();
         for (from_board, from) in (pinned_pawns & diagonals).iter() {
             for (_, to) in
-                (from_board.pawn_attacks(&self.side_to_move) & diagonals & capture_mask).iter()
+                (from_board.pawn_attacks(&self.state.side_to_move) & diagonals & capture_mask)
+                    .iter()
             {
                 legal_moves.push(Move::new_capture(from, to))
             }
@@ -241,7 +248,7 @@ impl Position {
             for (_, from) in capturers.iter() {
                 // Capturing is only possible when moving to a square in `push_mask`
                 // or capturing a piece on `capture_mask`
-                let capture_square = if self.side_to_move == WHITE {
+                let capture_square = if self.state.side_to_move == WHITE {
                     Square(en_passant_target.0 - 8)
                 } else {
                     Square(en_passant_target.0 + 8)
@@ -252,7 +259,7 @@ impl Position {
                         if rank & king == Board::EMPTY {
                             false
                         } else {
-                            let opponent = !self.side_to_move;
+                            let opponent = !self.state.side_to_move;
                             let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
                             let rook = self.piece_boards[ROOK.to_piece(opponent).0 as usize];
                             let potential_attackers = queen | rook;
@@ -283,11 +290,11 @@ impl Position {
     }
 
     fn metadata(&self) -> (Board, Board, Board, Board) {
-        let friendly_king = self.piece_boards[KING.to_piece(self.side_to_move).0 as usize];
+        let friendly_king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
 
         let occupied = self.side_boards[0] | self.side_boards[1];
         let empty_squares = !(self.side_boards[0] | self.side_boards[1]) ^ friendly_king;
-        let opponent = !self.side_to_move;
+        let opponent = !self.state.side_to_move;
 
         let king = self.piece_boards[KING.to_piece(opponent).0 as usize];
         let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
@@ -322,7 +329,8 @@ impl Position {
                 // No pieces between the attacker and the king
                 checkers.flip_square(&square);
             } else {
-                let friendly_between = between & self.side_boards[self.side_to_move.0 as usize];
+                let friendly_between =
+                    between & self.side_boards[self.state.side_to_move.0 as usize];
                 if friendly_between.occupied() == 1 {
                     // There is exactly one friendly piece between the attacker and the king, so it's pinned
                     pinned.flip_board(&friendly_between);
@@ -333,7 +341,7 @@ impl Position {
 
         // Pawns and knights can only be checkers, no pinners
         checkers |= (friendly_king.knight_attacks() & knight)
-            | (friendly_king.pawn_attacks(&self.side_to_move) & pawn);
+            | (friendly_king.pawn_attacks(&self.state.side_to_move) & pawn);
 
         (attacked, checkers, pinned, pinners)
     }
@@ -347,29 +355,26 @@ impl Position {
         halfmove_clock: u32,
         fullmove_number: u32,
     ) -> Self {
-        let hash = Zorbist::DEFAULT.hash(
-            &piece_boards,
-            &side_to_move,
-            &castling_rights,
-            &en_passant_target,
-        );
-
         let mut side_boards = [Board::EMPTY; 2];
         for (i, board) in piece_boards.iter().enumerate() {
             side_boards[i % 2].flip_board(board);
         }
 
+        let state = State {
+            side_to_move,
+            castling_rights,
+            en_passant_target,
+            halfmove_clock,
+            fullmove_number,
+        };
+
+        let hash = DEFAULT_ZOBRISH_HASH.position(&pieces, &state);
+
         Self {
             pieces,
             piece_boards,
             side_boards,
-            side_to_move,
-            state: State {
-                castling_rights,
-                en_passant_target,
-                halfmove_clock,
-                fullmove_number,
-            },
+            state,
             hash,
         }
     }
@@ -378,7 +383,7 @@ impl Position {
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let props = vec![
-            ("    side to move", format!("{}", self.side_to_move)),
+            ("    side to move", format!("{}", self.state.side_to_move)),
             (
                 " castling rights",
                 format!("{}", self.state.castling_rights),

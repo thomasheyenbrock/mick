@@ -9,6 +9,7 @@
 
 mod board;
 mod castle;
+mod hash;
 mod r#move;
 mod perft;
 mod piece;
@@ -46,9 +47,9 @@ fn main() {
 
     match cli.command {
         Some(Commands::Perft) => {
-            let p = Position::from_fen(Position::STARTING);
+            let mut p = Position::from_fen(Position::STARTING);
             println!("{}", p);
-            println!("{}", perft(&p, 1));
+            println!("{}", perft(&mut p, 1));
         }
         Some(Commands::Zorbist { seed }) => {
             use rand::rngs::SmallRng;
@@ -57,11 +58,10 @@ fn main() {
             let mut small_rng = SmallRng::seed_from_u64(seed);
 
             let pieces = 12;
-            let squares = 64;
             let sides = 1; // Only one used when it's blacks turn
-            let castle_rights = 4;
+            let castle_rights = 2u32.pow(4);
             let files = 8; // Used to indicate the en-passant target
-            let n = pieces * squares + sides + castle_rights + files;
+            let n = pieces + castle_rights + files + sides;
 
             for _ in 0..n {
                 println!("{}", small_rng.next_u64());

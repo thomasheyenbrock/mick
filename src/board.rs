@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{BitAnd, BitOr, BitOrAssign, BitXor, Not},
+    ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
 };
 
 use crate::{
@@ -88,6 +88,10 @@ impl Board {
         let attacks_two = attacks_right_two | attacks_left_two;
 
         Self((attacks_one << 16) | (attacks_one >> 16) | (attacks_two << 8) | (attacks_two >> 8))
+    }
+
+    pub fn new(square: Square) -> Board {
+        Board(1u64 << square.0)
     }
 
     pub fn north_attacks(&self, empty_squares: &Self) -> Self {
@@ -240,6 +244,12 @@ impl BitXor for Board {
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         Board(self.0 ^ rhs.0)
+    }
+}
+
+impl BitXorAssign for Board {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.0 ^= rhs.0
     }
 }
 

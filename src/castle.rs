@@ -1,4 +1,4 @@
-use crate::{board::Board, square::Square};
+use crate::{board::Board, side::Side, square::Square};
 use std::{
     fmt::Display,
     ops::{BitAnd, BitXor},
@@ -45,6 +45,15 @@ impl CastlingRights {
     pub const NOT_WHITE_QUEENSIDE: Self = Self(0b1101);
     pub const NOT_BLACK_KINGSIDE: Self = Self(0b1011);
     pub const NOT_BLACK_QUEENSIDE: Self = Self(0b0111);
+
+    pub fn clear(&mut self, rights: CastlingRights) {
+        self.0 &= !rights.0;
+    }
+
+    pub fn clear_side(&mut self, side: Side) {
+        let rights = CastlingRights::WHITE.0 << side.0;
+        self.0 &= !rights;
+    }
 
     pub fn from_str(s: &str) -> Self {
         if s == "-" {

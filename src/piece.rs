@@ -34,6 +34,14 @@ impl Piece {
         *self != NULL_PIECE
     }
 
+    pub fn kind(&self) -> PieceKind {
+        PieceKind(self.0 >> 1)
+    }
+
+    pub fn side(&self) -> Side {
+        Side(self.0 & 1)
+    }
+
     pub fn to_char(&self) -> char {
         CHARS[self.0 as usize]
     }

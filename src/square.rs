@@ -12,11 +12,30 @@ static SQUARES: [&str; 64] = [
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Square(pub u8);
 
+pub const A1: Square = Square(0);
+pub const C1: Square = Square(2);
+pub const D1: Square = Square(3);
+pub const E1: Square = Square(4);
+pub const F1: Square = Square(5);
+pub const G1: Square = Square(6);
+pub const H1: Square = Square(7);
+pub const A8: Square = Square(56);
+pub const C8: Square = Square(58);
+pub const D8: Square = Square(59);
+pub const E8: Square = Square(60);
+pub const F8: Square = Square(61);
+pub const G8: Square = Square(62);
+pub const H8: Square = Square(63);
+
 impl Square {
     pub const WHITE_KINGSIDE_TARGET: Self = Self(6);
     pub const WHITE_QUEENSIDE_TARGET: Self = Self(2);
     pub const BLACK_KINGSIDE_TARGET: Self = Self(62);
     pub const BLACK_QUEENSIDE_TARGET: Self = Self(58);
+
+    pub fn along_row_with_col(self, other: Square) -> Square {
+        Square((self.0 & 56) | (other.0 & 7))
+    }
 
     pub fn between(&self, rhs: &Self) -> Board {
         SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
@@ -30,8 +49,8 @@ impl Square {
         FILES[self.0 as usize]
     }
 
-    pub fn file_index(&self) -> usize {
-        (self.0 % 8) as usize
+    pub fn file_index(&self) -> u8 {
+        self.0 & 7
     }
 
     pub fn from(rank: u8, file: u8) -> Square {

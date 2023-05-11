@@ -86,7 +86,7 @@ impl Position {
         }
 
         fen.push(' ');
-        fen.push_str(&format!("{}", self.side_to_move));
+        fen.push_str(&format!("{}", self.state.side_to_move));
         fen.push(' ');
         fen.push_str(&self.state.castling_rights.to_string());
         fen.push(' ');
@@ -208,14 +208,14 @@ mod tests {
                     Board(0x00FF_0000_0000_0000),
                 ],
                 side_boards: [Board(0x0000_0000_0000_FFFF), Board(0xFFFF_0000_0000_0000)],
-                side_to_move: WHITE,
                 state: State {
+                    side_to_move: WHITE,
                     castling_rights: CastlingRights::ALL_RIGHTS,
                     en_passant_target: None,
                     halfmove_clock: 0,
                     fullmove_number: 1,
                 },
-                hash: 15169217504194791061
+                hash: 1307476362392126559
             }
         );
     }
