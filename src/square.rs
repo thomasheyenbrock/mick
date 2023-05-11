@@ -34,6 +34,10 @@ impl Square {
         (self.0 % 8) as usize
     }
 
+    pub fn from(rank: u8, file: u8) -> Square {
+        Square(rank * 8 + file)
+    }
+
     pub fn lines_along(&self, rhs: &Self) -> Board {
         LINES_ALONG[self.0 as usize][rhs.0 as usize]
     }

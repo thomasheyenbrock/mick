@@ -1,6 +1,8 @@
-use std::ops::{BitAnd, BitXor};
-
 use crate::{board::Board, square::Square};
+use std::{
+    fmt::Display,
+    ops::{BitAnd, BitXor},
+};
 
 // TODO: benchmark if it's faster to just expose the internal value
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -75,6 +77,16 @@ impl BitXor for CastlingRights {
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         CastlingRights(self.0 ^ rhs.0)
+    }
+}
+
+const DISPLAY: [&str; 16] = [
+    "-", "K", "Q", "KQ", "k", "Kk", "Qk", "KQk", "q", "Kq", "Qq", "KQq", "kq", "Kkq", "Qkq", "KQkq",
+];
+
+impl Display for CastlingRights {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", DISPLAY[self.0 as usize])
     }
 }
 

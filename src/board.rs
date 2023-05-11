@@ -6,6 +6,7 @@ use std::{
 use crate::{
     side::{Side, WHITE},
     square::Square,
+    utils::grid_to_string,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -246,33 +247,19 @@ impl BitXor for Board {
     }
 }
 
-const GRID_FILES: &str = "    A   B   C   D   E   F   G   H";
-const GRID_TOP: &str = "  ┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
-const GRID_MIDDLE: &str = "  ├───┼───┼───┼───┼───┼───┼───┼───┤\n";
-const GRID_BOTTOM: &str = "  └───┴───┴───┴───┴───┴───┴───┴───┘\n";
-
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut printed = String::from(GRID_FILES) + "\n" + GRID_TOP;
-        for rank_index in 0..8 {
-            let rank_index = 8 - rank_index;
-            printed += &rank_index.to_string();
-            printed += " ";
-            for file_index in 0..8 {
-                if self.0 & (1 << (8 * (rank_index - 1) + file_index)) == 0 {
-                    printed += "|   ";
+        return write!(
+            f,
+            "{}",
+            grid_to_string(|s: Square| -> char {
+                if (self.0 >> s.to_u8()) & 1 != 0 {
+                    'X'
                 } else {
-                    printed += "| X ";
+                    ' '
                 }
-            }
-            printed += "|\n";
-            printed += if rank_index == 1 {
-                GRID_BOTTOM
-            } else {
-                GRID_MIDDLE
-            }
-        }
-        write!(f, "{}", printed)
+            })
+        );
     }
 }
 

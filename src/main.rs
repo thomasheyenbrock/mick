@@ -16,6 +16,7 @@ mod piece;
 mod position;
 mod side;
 mod square;
+mod utils;
 
 use clap::{Parser, Subcommand};
 use perft::perft;
@@ -46,7 +47,9 @@ fn main() {
 
     match cli.command {
         Some(Commands::Perft) => {
-            println!("{}", perft(&Position::from_fen(Position::STARTING), 1));
+            let p = Position::from_fen(Position::STARTING);
+            println!("{}", p);
+            println!("{}", perft(&p, 1));
         }
         Some(Commands::Zorbist { seed }) => {
             use rand::rngs::SmallRng;

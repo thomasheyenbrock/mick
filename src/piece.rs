@@ -1,5 +1,7 @@
 use crate::side::Side;
 
+const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Piece(u8);
 
@@ -20,6 +22,10 @@ impl Piece {
 
     pub fn is_some(&self) -> bool {
         self.0 <= 11
+    }
+
+    pub fn to_char(&self) -> char {
+        CHARS[self.to_usize()]
     }
 
     pub fn to_usize(&self) -> usize {

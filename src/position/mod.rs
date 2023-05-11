@@ -2,6 +2,7 @@ mod fen;
 mod r#move;
 mod zorbist;
 
+use self::zorbist::Zorbist;
 use crate::{
     board::{Board, RANKS},
     castle::{CastlingRights, CASTLE_BY_SIDE},
@@ -9,9 +10,9 @@ use crate::{
     r#move::Move,
     side::{Side, WHITE},
     square::Square,
+    utils::grid_to_string_with_props,
 };
-
-use self::zorbist::Zorbist;
+use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct State {
@@ -373,6 +374,41 @@ impl Position {
             },
             hash,
         }
+    }
+}
+
+impl Display for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let props = vec![
+            ("    side to move", format!("{}", self.side_to_move)),
+            (
+                " castling rights",
+                format!("{}", self.state.castling_rights),
+            ),
+            (
+                "      en-passant",
+                self.state
+                    .en_passant_target
+                    .map_or("-".to_string(), |s| s.to_string()),
+            ),
+            (" half-move clock", self.state.halfmove_clock.to_string()),
+            ("full-move number", self.state.fullmove_number.to_string()),
+            ("             FEN", self.to_fen()),
+            ("            hash", format!("{:016X}", self.hash)),
+        ];
+        let s = grid_to_string_with_props(
+            |s: Square| -> char {
+                let piece = self.pieces[s.to_usize()];
+                if piece.is_some() {
+                    piece.to_char()
+                } else {
+                    ' '
+                }
+            },
+            props.as_slice(),
+        );
+
+        write!(f, "{}", &s)
     }
 }
 

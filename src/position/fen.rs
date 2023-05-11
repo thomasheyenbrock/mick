@@ -53,6 +53,51 @@ impl Position {
             fullmove_number,
         )
     }
+
+    pub fn to_fen(&self) -> String {
+        let mut fen = String::new();
+
+        for rank_index in 0..8 {
+            let mut empty = 0;
+            for file_index in 0..8 {
+                let piece = self.pieces[Square::from(7 - rank_index, file_index).to_usize()];
+                if piece.is_some() {
+                    if empty > 0 {
+                        fen += &empty.to_string();
+                        empty = 0;
+                    }
+                    fen.push(piece.to_char());
+                } else {
+                    empty += 1;
+                }
+            }
+            if empty > 0 {
+                fen += &empty.to_string();
+            }
+            if rank_index != 7 {
+                fen.push('/')
+            }
+        }
+
+        fen.push(' ');
+        fen.push_str(&format!("{}", self.side_to_move));
+        fen.push(' ');
+        fen.push_str(&self.state.castling_rights.to_string());
+        fen.push(' ');
+        fen.push_str(
+            &(if let Some(sq) = self.state.en_passant_target {
+                sq.to_string()
+            } else {
+                "-".to_string()
+            }),
+        );
+        fen.push(' ');
+        fen.push_str(&self.state.halfmove_clock.to_string());
+        fen.push(' ');
+        fen.push_str(&self.state.fullmove_number.to_string());
+
+        fen
+    }
 }
 
 #[cfg(test)]
