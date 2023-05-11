@@ -3,7 +3,10 @@ use std::{
     ops::{BitAnd, BitOr, BitOrAssign, BitXor, Not},
 };
 
-use crate::{side::Side, square::Square};
+use crate::{
+    side::{Side, WHITE},
+    square::Square,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Board(u64);
@@ -142,7 +145,7 @@ impl Board {
         let attacks_left = (self.0 >> 1) & Self::NOT_FILE_H.0;
         let attacks = attacks_right | attacks_left;
 
-        if *side_to_move == Side::WHITE {
+        if *side_to_move == WHITE {
             Self(attacks << 8)
         } else {
             Self(attacks >> 8)

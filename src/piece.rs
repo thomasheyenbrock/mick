@@ -56,7 +56,7 @@ impl PieceKind {
     pub const PAWN: Self = Self(5);
 
     pub fn to_piece(&self, side: &Side) -> Piece {
-        Piece(2 * self.0 + side.to_u8())
+        Piece(2 * self.0 + side.0)
     }
 
     pub fn to_usize(&self) -> usize {

@@ -2,7 +2,7 @@ use crate::{
     castle::{Castle, CastlingRights},
     piece::{Piece, PieceKind},
     r#move::Move,
-    side::Side,
+    side::{BLACK, WHITE},
     square::Square,
 };
 
@@ -29,7 +29,7 @@ impl Position {
         let moved_piece = self.pieces[from_square_index];
         let captured_piece = self.pieces[to_square_index];
 
-        let side_index = self.side_to_move.to_usize();
+        let side_index = self.side_to_move.0 as usize;
         let moved_piece_index = moved_piece.to_usize();
 
         // Move the piece
@@ -46,7 +46,7 @@ impl Position {
         // Handle captures
         if captured_piece.is_some() {
             self.piece_boards[captured_piece.to_usize()].flip_square(&to);
-            self.side_boards[opponent.to_usize()].flip_square(&to);
+            self.side_boards[opponent.0 as usize].flip_square(&to);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &captured_piece, &to);
         }
 
@@ -65,14 +65,14 @@ impl Position {
 
         // Handle en passant
         if m.is_en_passant_capture() {
-            if self.side_to_move == Side::WHITE {
+            if self.side_to_move == WHITE {
                 let captured_pawn = Square::new(to.to_u8() - 8);
                 self.piece_boards[Piece::BLACK_PAWN.to_usize()].flip_square(&captured_pawn);
-                self.side_boards[Side::BLACK.to_usize()].flip_square(&captured_pawn);
+                self.side_boards[BLACK.0 as usize].flip_square(&captured_pawn);
             } else {
                 let captured_pawn = Square::new(to.to_u8() + 8);
                 self.piece_boards[Piece::WHITE_PAWN.to_usize()].flip_square(&captured_pawn);
-                self.side_boards[Side::WHITE.to_usize()].flip_square(&captured_pawn);
+                self.side_boards[WHITE.0 as usize].flip_square(&captured_pawn);
             };
         }
         if let Some(en_passant_target) = &self.state.en_passant_target {
@@ -82,7 +82,7 @@ impl Position {
 
         // Handle double pawn pushes
         if m.is_double_pawn_push() {
-            let en_passant_target = Square::new(if self.side_to_move == Side::WHITE {
+            let en_passant_target = Square::new(if self.side_to_move == WHITE {
                 from.to_u8() + 8
             } else {
                 from.to_u8() - 8
@@ -94,10 +94,10 @@ impl Position {
         // Handle castles
         if let Some(castle) = m.castle() {
             let (rook, rook_from_index, rook_to_index) = match (castle, self.side_to_move) {
-                (Castle::KINGSIDE, Side::WHITE) => (Piece::WHITE_ROOK, 7, 5),
-                (Castle::QUEENSIDE, Side::WHITE) => (Piece::WHITE_ROOK, 0, 3),
-                (Castle::KINGSIDE, Side::BLACK) => (Piece::BLACK_ROOK, 63, 61),
-                (Castle::QUEENSIDE, Side::BLACK) => (Piece::BLACK_ROOK, 56, 59),
+                (Castle::KINGSIDE, WHITE) => (Piece::WHITE_ROOK, 7, 5),
+                (Castle::QUEENSIDE, WHITE) => (Piece::WHITE_ROOK, 0, 3),
+                (Castle::KINGSIDE, BLACK) => (Piece::BLACK_ROOK, 63, 61),
+                (Castle::QUEENSIDE, BLACK) => (Piece::BLACK_ROOK, 56, 59),
                 _ => unreachable!(),
             };
 
@@ -166,7 +166,7 @@ impl Position {
             prev_state.halfmove_clock + 1
         };
 
-        if self.side_to_move == Side::BLACK {
+        if self.side_to_move == BLACK {
             self.state.fullmove_number += 1;
         }
 
@@ -195,7 +195,7 @@ impl Position {
 
         let moved_piece = self.pieces[to_square_index];
 
-        let side_index = self.side_to_move.to_usize();
+        let side_index = self.side_to_move.0 as usize;
         let moved_piece_index = moved_piece.to_usize();
 
         // Move the piece
@@ -212,7 +212,7 @@ impl Position {
         // Handle captures
         if captured_piece.is_some() {
             self.piece_boards[captured_piece.to_usize()].flip_square(&to);
-            self.side_boards[opponent.to_usize()].flip_square(&to);
+            self.side_boards[opponent.0 as usize].flip_square(&to);
             self.hash = Zorbist::DEFAULT.toggle_piece(self.hash, &captured_piece, &to);
         }
 
@@ -231,14 +231,14 @@ impl Position {
 
         // Handle en passant
         if m.is_en_passant_capture() {
-            if self.side_to_move == Side::WHITE {
+            if self.side_to_move == WHITE {
                 let captured_pawn = Square::new(to.to_u8() - 8);
                 self.piece_boards[Piece::BLACK_PAWN.to_usize()].flip_square(&captured_pawn);
-                self.side_boards[Side::BLACK.to_usize()].flip_square(&captured_pawn);
+                self.side_boards[BLACK.0 as usize].flip_square(&captured_pawn);
             } else {
                 let captured_pawn = Square::new(to.to_u8() + 8);
                 self.piece_boards[Piece::WHITE_PAWN.to_usize()].flip_square(&captured_pawn);
-                self.side_boards[Side::WHITE.to_usize()].flip_square(&captured_pawn);
+                self.side_boards[WHITE.0 as usize].flip_square(&captured_pawn);
             };
         }
         if let Some(en_passant_target) = self.state.en_passant_target {
@@ -251,10 +251,10 @@ impl Position {
         // Handle castles
         if let Some(castle) = m.castle() {
             let (rook, rook_from_index, rook_to_index) = match (castle, self.side_to_move) {
-                (Castle::KINGSIDE, Side::WHITE) => (Piece::WHITE_ROOK, 7, 5),
-                (Castle::QUEENSIDE, Side::WHITE) => (Piece::WHITE_ROOK, 0, 3),
-                (Castle::KINGSIDE, Side::BLACK) => (Piece::BLACK_ROOK, 63, 61),
-                (Castle::QUEENSIDE, Side::BLACK) => (Piece::BLACK_ROOK, 56, 59),
+                (Castle::KINGSIDE, WHITE) => (Piece::WHITE_ROOK, 7, 5),
+                (Castle::QUEENSIDE, WHITE) => (Piece::WHITE_ROOK, 0, 3),
+                (Castle::KINGSIDE, BLACK) => (Piece::BLACK_ROOK, 63, 61),
+                (Castle::QUEENSIDE, BLACK) => (Piece::BLACK_ROOK, 56, 59),
                 _ => unreachable!(),
             };
 
@@ -292,7 +292,7 @@ mod tests {
         piece::{Piece, PieceKind},
         position::Position,
         r#move::Move,
-        side::Side,
+        side::{BLACK, WHITE},
         square::Square,
     };
 
@@ -309,10 +309,10 @@ mod tests {
             Board::new(0x0000_0000_0000_0100)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0000_0100)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -335,12 +335,12 @@ mod tests {
             Board::new(0x0000_0000_0000_0100)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0000_0100)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -369,10 +369,10 @@ mod tests {
             Board::new(0x0000_0000_0000_0021)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0000_0061)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -401,10 +401,10 @@ mod tests {
             Board::new(0x0000_0000_0000_0088)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0000_008C)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -427,10 +427,10 @@ mod tests {
             Board::new(0x4000_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x4000_0000_0000_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -453,12 +453,12 @@ mod tests {
             Board::new(0x4000_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x4000_0000_0000_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -481,10 +481,10 @@ mod tests {
             Board::new(0x0100_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0100_0000_0000_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -507,12 +507,12 @@ mod tests {
             Board::new(0x0100_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0100_0000_0000_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -535,10 +535,10 @@ mod tests {
             Board::new(0x4000_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x4000_0000_0000_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -561,12 +561,12 @@ mod tests {
             Board::new(0x4000_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x4000_0000_0000_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -589,10 +589,10 @@ mod tests {
             Board::new(0x0000_0000_0200_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0200_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 1);
@@ -615,12 +615,12 @@ mod tests {
             Board::new(0x0000_0000_0200_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0200_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -643,10 +643,10 @@ mod tests {
             Board::new(0x0000_0000_0001_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0001_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -669,10 +669,10 @@ mod tests {
             Board::new(0x0000_0000_0100_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0100_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, Some(Square::new(16)));
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -696,10 +696,10 @@ mod tests {
             Board::new(0x0100_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0100_0000_0000_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -722,12 +722,12 @@ mod tests {
             Board::new(0x0000_0000_0002_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0000_0002_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -751,10 +751,10 @@ mod tests {
             Board::new(0x0200_0000_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0200_0000_0000_0001)
         );
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -778,12 +778,12 @@ mod tests {
             Board::new(0x0000_0200_0000_0000)
         );
         assert_eq!(
-            p2.side_boards[Side::WHITE.to_usize()],
+            p2.side_boards[WHITE.0 as usize],
             Board::new(0x0000_0200_0000_0001)
         );
         assert_eq!(p2.piece_boards[Piece::BLACK_PAWN.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_boards[Side::BLACK.to_usize()], Board::EMPTY);
-        assert_eq!(p2.side_to_move, Side::BLACK);
+        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
         assert_eq!(p2.state.halfmove_clock, 0);
@@ -833,7 +833,7 @@ mod tests {
         let m = Move::new_push(&Square::new(0), &Square::new(1));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
-        assert_eq!(p2.side_to_move, Side::WHITE);
+        assert_eq!(p2.side_to_move, WHITE);
         assert_eq!(p2.state.halfmove_clock, 1);
         assert_eq!(p2.state.fullmove_number, 2);
 

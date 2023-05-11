@@ -7,7 +7,7 @@ use crate::{
     castle::{CastlingRights, CASTLE_BY_SIDE},
     piece::{Piece, PieceKind},
     r#move::Move,
-    side::Side,
+    side::{Side, WHITE},
     square::Square,
 };
 
@@ -42,7 +42,7 @@ impl Position {
 
         // Opponent pieces
         let opponent_side = !self.side_to_move;
-        let mut capture_mask = self.side_boards[opponent_side.to_usize()];
+        let mut capture_mask = self.side_boards[opponent_side.0 as usize];
         // Empty squares
         let mut push_mask = empty_squares;
         let not_attacked = !attacked;
@@ -91,7 +91,7 @@ impl Position {
 
         // Castles
         for (castle, castling_rights, to, blocking, safe) in
-            CASTLE_BY_SIDE[self.side_to_move.to_usize()]
+            CASTLE_BY_SIDE[self.side_to_move.0 as usize]
         {
             if self.state.castling_rights & castling_rights != CastlingRights::NO_RIGHTS
                 && occupied & blocking == Board::EMPTY
@@ -167,12 +167,11 @@ impl Position {
         // Pawn moves
         let pawn = self.piece_boards[PieceKind::PAWN.to_piece(&self.side_to_move).to_usize()];
         // TODO: make this an array lookup (if it's faster)
-        let (rotate, double_push_rank_index, promotion_rank_index) =
-            if self.side_to_move == Side::WHITE {
-                (8, 3, 7)
-            } else {
-                (56, 4, 0)
-            };
+        let (rotate, double_push_rank_index, promotion_rank_index) = if self.side_to_move == WHITE {
+            (8, 3, 7)
+        } else {
+            (56, 4, 0)
+        };
 
         // Non-pinned pawns
         for (from_board, from) in (pawn & !pinned).iter() {
@@ -240,7 +239,7 @@ impl Position {
             for (_, from) in capturers.iter() {
                 // Capturing is only possible when moving to a square in `push_mask`
                 // or capturing a piece on `capture_mask`
-                let capture_square = if self.side_to_move == Side::WHITE {
+                let capture_square = if self.side_to_move == WHITE {
                     Square::new(en_passant_target.to_u8() - 8)
                 } else {
                     Square::new(en_passant_target.to_u8() + 8)
@@ -318,13 +317,13 @@ impl Position {
         for (_, square) in potential_attackers.iter() {
             let between = square.between(&king_square);
 
-            if between & self.side_boards[opponent.to_usize()] != Board::EMPTY {
+            if between & self.side_boards[opponent.0 as usize] != Board::EMPTY {
                 // There is another opponents piece in between the potential attacker and the king, nothing to do
             } else if between & occupied == Board::EMPTY {
                 // No pieces between the attacker and the king
                 checkers.flip_square(&square);
             } else {
-                let friendly_between = between & self.side_boards[self.side_to_move.to_usize()];
+                let friendly_between = between & self.side_boards[self.side_to_move.0 as usize];
                 if friendly_between.occupied() == 1 {
                     // There is exactly one friendly piece between the attacker and the king, so it's pinned
                     pinned.flip_board(&friendly_between);

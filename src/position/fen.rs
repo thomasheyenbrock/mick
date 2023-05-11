@@ -7,7 +7,7 @@ impl Position {
 
     pub fn from_fen(fen: &str) -> Self {
         let parts: Vec<&str> = fen.split(" ").collect();
-        assert!(parts.len() == 6, "Invalid fen {fen}");
+        assert!(parts.len() == 6, "Invalid FEN {fen}");
 
         let mut pieces = [Piece::NONE; 64];
         let mut piece_boards = [Board::EMPTY; 12];
@@ -24,12 +24,12 @@ impl Position {
                 } else if let Some(digit) = char.to_digit(10) {
                     file_index += digit as usize;
                 } else {
-                    panic!("Invalid fen {fen}")
+                    panic!("Invalid FEN {fen}")
                 }
             }
         }
 
-        let side = Side::from_str(unsafe { parts.get_unchecked(1) });
+        let side = Side::try_from_str(unsafe { parts.get_unchecked(1) }).expect("Invalid FEN");
         let castling_rights = CastlingRights::from_str(unsafe { parts.get_unchecked(2) });
         let en_passant_target = Square::try_from_str(unsafe { parts.get_unchecked(3) }).ok();
 
@@ -62,7 +62,7 @@ mod tests {
         castle::CastlingRights,
         piece::Piece,
         position::{Position, State},
-        side::Side,
+        side::WHITE,
     };
 
     #[test]
@@ -156,7 +156,7 @@ mod tests {
                     Board::new(0x0000_0000_0000_FFFF),
                     Board::new(0xFFFF_0000_0000_0000)
                 ],
-                side_to_move: Side::WHITE,
+                side_to_move: WHITE,
                 state: State {
                     castling_rights: CastlingRights::ALL_RIGHTS,
                     en_passant_target: None,

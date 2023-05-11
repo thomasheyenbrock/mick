@@ -1,4 +1,10 @@
-use crate::{board::Board, castle::CastlingRights, piece::Piece, side::Side, square::Square};
+use crate::{
+    board::Board,
+    castle::CastlingRights,
+    piece::Piece,
+    side::{Side, WHITE},
+    square::Square,
+};
 
 pub struct Zorbist {
     piece_boards: [[u64; 64]; 12],
@@ -830,7 +836,7 @@ impl Zorbist {
         castling_rights: &CastlingRights,
         en_passant_target: &Option<Square>,
     ) -> u64 {
-        let side_to_mode = if *side_to_move == Side::WHITE {
+        let side_to_mode = if *side_to_move == WHITE {
             0
         } else {
             self.side_to_move

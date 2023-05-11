@@ -1,26 +1,18 @@
-use std::ops::Not;
+use std::{fmt, ops::Not};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Side(u8);
+// TODO: remove Eq
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Side(pub u8);
+
+const CHARS: [char; 2] = ['w', 'b'];
 
 impl Side {
-    pub const WHITE: Self = Self(0);
-    pub const BLACK: Self = Self(1);
-
-    pub fn from_str(s: &str) -> Self {
+    pub fn try_from_str(s: &str) -> Result<Side, String> {
         match s {
-            "w" => Side(0),
-            "b" => Side(1),
-            _ => panic!("Invalid side {s}"),
+            "w" => Ok(WHITE),
+            "b" => Ok(BLACK),
+            _ => Err(format!("Invalid side: {}", s)),
         }
-    }
-
-    pub fn to_u8(&self) -> u8 {
-        self.0
-    }
-
-    pub fn to_usize(&self) -> usize {
-        self.0 as usize
     }
 }
 
@@ -32,27 +24,38 @@ impl Not for Side {
     }
 }
 
+impl fmt::Display for Side {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", CHARS[self.0 as usize])
+    }
+}
+
+pub const WHITE: Side = Side(0);
+pub const BLACK: Side = Side(1);
+
 #[cfg(test)]
 mod tests {
-    use crate::side::Side;
+    use crate::side::{Side, BLACK, WHITE};
 
     #[test]
     fn from_valid() {
-        assert_eq!(Side::from_str("w"), Side::WHITE);
-        assert_eq!(Side::from_str("b"), Side::BLACK);
+        assert_eq!(Side::try_from_str("w"), Ok(WHITE));
+        assert_eq!(Side::try_from_str("b"), Ok(BLACK));
     }
 
     #[test]
-    #[should_panic(expected = "Invalid side -")]
     fn from_invalid() {
-        Side::from_str("-");
+        assert_eq!(
+            Side::try_from_str("-"),
+            Err(String::from("Invalid side: -"))
+        );
     }
 
     #[test]
     fn not() {
-        assert_eq!(!Side::WHITE, Side::BLACK);
-        assert_eq!(!Side::BLACK, Side::WHITE);
-        assert_eq!(!!Side::WHITE, Side::WHITE);
-        assert_eq!(!!Side::BLACK, Side::BLACK);
+        assert_eq!(!WHITE, BLACK);
+        assert_eq!(!BLACK, WHITE);
+        assert_eq!(!!WHITE, WHITE);
+        assert_eq!(!!BLACK, BLACK);
     }
 }
