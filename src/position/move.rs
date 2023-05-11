@@ -54,7 +54,7 @@ impl Position {
         }
 
         // Handle promotions
-        if let Some(promotion_piece_kind) = m.promotion_piece_kind() {
+        if let Some(promotion_piece_kind) = m.promote_to() {
             let promotion_piece = promotion_piece_kind.to_piece(self.side_to_move);
 
             self.pieces[to_square_index] = promotion_piece;
@@ -220,7 +220,7 @@ impl Position {
         }
 
         // Handle promotions
-        if m.promotion_piece_kind().is_some() {
+        if m.promote_to().is_some() {
             let pawn = PAWN.to_piece(self.side_to_move);
 
             self.pieces[from_square_index] = pawn;
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn king_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/K7 w - - 0 1");
-        let m = Move::new_push(&Square(0), &Square(8));
+        let m = Move::new_push(Square(0), Square(8));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[0], NULL_PIECE);
@@ -331,7 +331,7 @@ mod tests {
     #[test]
     fn king_capture() {
         let p1 = Position::from_fen("8/8/8/8/8/8/p7/K7 w - - 0 1");
-        let m = Move::new_capture(&Square(0), &Square(8));
+        let m = Move::new_capture(Square(0), Square(8));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[0], NULL_PIECE);
@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn castle_kingside() {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        let m = Move::new_castle(&Square(4), &Square(6), &Castle::KINGSIDE);
+        let m = Move::new_castle(Square(4), Square(6), Castle::KINGSIDE);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[4], NULL_PIECE);
@@ -391,7 +391,7 @@ mod tests {
     #[test]
     fn castle_queenside() {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        let m = Move::new_castle(&Square(4), &Square(2), &Castle::QUEENSIDE);
+        let m = Move::new_castle(Square(4), Square(2), Castle::QUEENSIDE);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[4], NULL_PIECE);
@@ -423,7 +423,7 @@ mod tests {
     #[test]
     fn queen_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/Q7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(62));
+        let m = Move::new_push(Square(8), Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -449,7 +449,7 @@ mod tests {
     #[test]
     fn queen_capture() {
         let p1 = Position::from_fen("6p1/8/8/8/8/8/Q7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(62));
+        let m = Move::new_push(Square(8), Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -477,7 +477,7 @@ mod tests {
     #[test]
     fn rook_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/R7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(56));
+        let m = Move::new_push(Square(8), Square(56));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -503,7 +503,7 @@ mod tests {
     #[test]
     fn rook_capture() {
         let p1 = Position::from_fen("p7/8/8/8/8/8/R7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(56));
+        let m = Move::new_push(Square(8), Square(56));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -531,7 +531,7 @@ mod tests {
     #[test]
     fn bishop_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/B7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(62));
+        let m = Move::new_push(Square(8), Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -557,7 +557,7 @@ mod tests {
     #[test]
     fn bishop_capture() {
         let p1 = Position::from_fen("6p1/8/8/8/8/8/B7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(62));
+        let m = Move::new_push(Square(8), Square(62));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -585,7 +585,7 @@ mod tests {
     #[test]
     fn knight_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/N7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(25));
+        let m = Move::new_push(Square(8), Square(25));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -611,7 +611,7 @@ mod tests {
     #[test]
     fn knight_capture() {
         let p1 = Position::from_fen("8/8/8/8/1p6/8/N7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(25));
+        let m = Move::new_push(Square(8), Square(25));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -639,7 +639,7 @@ mod tests {
     #[test]
     fn pawn_single_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/P7/K7 w - - 0 1");
-        let m = Move::new_push(&Square(8), &Square(16));
+        let m = Move::new_push(Square(8), Square(16));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -665,7 +665,7 @@ mod tests {
     #[test]
     fn pawn_double_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/P7/K7 w - - 0 1");
-        let m = Move::new_push_double_pawn(&Square(8), &Square(24));
+        let m = Move::new_push_double_pawn(Square(8), Square(24));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -691,7 +691,7 @@ mod tests {
     #[test]
     fn pawn_push_promotion() {
         let p1 = Position::from_fen("8/P7/8/8/8/8/8/K7 w - - 0 1");
-        let m = Move::new_push_promotion(&Square(48), &Square(56), &QUEEN);
+        let m = Move::new_push_promotion(Square(48), Square(56), QUEEN);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
@@ -718,7 +718,7 @@ mod tests {
     #[test]
     fn pawn_capture() {
         let p1 = Position::from_fen("8/8/8/8/8/1p6/P7/K7 w - - 0 1");
-        let m = Move::new_capture(&Square(8), &Square(17));
+        let m = Move::new_capture(Square(8), Square(17));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
@@ -746,7 +746,7 @@ mod tests {
     #[test]
     fn pawn_capture_promotion() {
         let p1 = Position::from_fen("1p6/P7/8/8/8/8/8/K7 w - - 0 1");
-        let m = Move::new_capture_promotion(&Square(48), &Square(57), &QUEEN);
+        let m = Move::new_capture_promotion(Square(48), Square(57), QUEEN);
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
@@ -773,7 +773,7 @@ mod tests {
     #[test]
     fn pawn_capture_en_passant() {
         let p1 = Position::from_fen("8/8/8/Pp6/8/8/8/K7 w - b6 0 1");
-        let m = Move::new_capture_en_passant(&Square(32), &Square(41));
+        let m = Move::new_capture_en_passant(Square(32), Square(41));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.pieces[32], NULL_PIECE);
@@ -803,7 +803,7 @@ mod tests {
     fn removing_castling_right() {
         // When the king moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        let m = Move::new_push(&Square(4), &Square(5));
+        let m = Move::new_push(Square(4), Square(5));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::NO_RIGHTS);
@@ -813,7 +813,7 @@ mod tests {
 
         // When the kingside rook moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        let m = Move::new_push(&Square(7), &Square(6));
+        let m = Move::new_push(Square(7), Square(6));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_QUEENSIDE);
@@ -823,7 +823,7 @@ mod tests {
 
         // When the queenside rook moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        let m = Move::new_push(&Square(0), &Square(1));
+        let m = Move::new_push(Square(0), Square(1));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.state.castling_rights, CastlingRights::WHITE_KINGSIDE);
@@ -836,7 +836,7 @@ mod tests {
     fn black_to_move() {
         // When the king moves
         let p1 = Position::from_fen("8/8/8/8/8/8/8/k7 b - - 0 1");
-        let m = Move::new_push(&Square(0), &Square(1));
+        let m = Move::new_push(Square(0), Square(1));
 
         let (mut p2, captured_piece, prev_state) = p1.make(&m);
         assert_eq!(p2.side_to_move, WHITE);

@@ -12,6 +12,20 @@ impl Castle {
     pub const QUEENSIDE: Self = Self(1);
 }
 
+impl Display for Castle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            if *self == Castle::QUEENSIDE {
+                "O-O-O"
+            } else {
+                "O-O"
+            }
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CastlingRights(pub u8);
 

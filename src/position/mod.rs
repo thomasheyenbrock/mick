@@ -53,10 +53,10 @@ impl Position {
         let king_square = king.to_square();
         let king_moves = king.king_attacks();
         for (_, to) in (king_moves & capture_mask & not_attacked).iter() {
-            legal_moves.push(Move::new_capture(&king_square, &to));
+            legal_moves.push(Move::new_capture(king_square, to));
         }
         for (_, to) in (king_moves & push_mask & not_attacked).iter() {
-            legal_moves.push(Move::new_capture(&king_square, &to));
+            legal_moves.push(Move::new_capture(king_square, to));
         }
 
         match checkers.occupied() {
@@ -95,7 +95,7 @@ impl Position {
                 && occupied & blocking == Board::EMPTY
                 && safe & attacked == Board::EMPTY
             {
-                legal_moves.push(Move::new_castle(&king_square, &to, &castle))
+                legal_moves.push(Move::new_castle(king_square, to, castle))
             }
         }
 
@@ -108,10 +108,10 @@ impl Position {
         for (from_board, from) in ((queen | rook) & !pinned).iter() {
             let attacks = from_board.straight_attacks(&empty_squares);
             for (_, to) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(&from, &to));
+                legal_moves.push(Move::new_capture(from, to));
             }
             for (_, to) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
         }
 
@@ -120,10 +120,10 @@ impl Position {
             let attacks =
                 from_board.straight_attacks(&empty_squares) & from.lines_along(&king_square);
             for (_, to) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(&from, &to));
+                legal_moves.push(Move::new_capture(from, to));
             }
             for (_, to) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
         }
 
@@ -131,10 +131,10 @@ impl Position {
         for (from_board, from) in ((queen | bishop) & !pinned).iter() {
             let attacks = from_board.diagonal_attacks(&empty_squares);
             for (_, to) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(&from, &to));
+                legal_moves.push(Move::new_capture(from, to));
             }
             for (_, to) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
         }
 
@@ -143,10 +143,10 @@ impl Position {
             let attacks =
                 from_board.diagonal_attacks(&empty_squares) & from.lines_along(&king_square);
             for (_, to) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(&from, &to));
+                legal_moves.push(Move::new_capture(from, to));
             }
             for (_, to) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
         }
 
@@ -155,10 +155,10 @@ impl Position {
         for (from_board, from) in (knight & !pinned).iter() {
             let attacks = from_board.knight_attacks();
             for (_, to) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(&from, &to));
+                legal_moves.push(Move::new_capture(from, to));
             }
             for (_, to) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
         }
 
@@ -177,10 +177,12 @@ impl Position {
             let single_push = from_board.rotate_left(rotate) & empty_squares;
             for (_, to) in (single_push & push_mask).iter() {
                 if to.rank_index() == promotion_rank_index {
-                    // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
-                    legal_moves.append(&mut Move::all_push_promotions(&from, &to));
+                    legal_moves.push(Move::new_push_promotion(from, to, QUEEN));
+                    legal_moves.push(Move::new_push_promotion(from, to, ROOK));
+                    legal_moves.push(Move::new_push_promotion(from, to, BISHOP));
+                    legal_moves.push(Move::new_push_promotion(from, to, KNIGHT));
                 } else {
-                    legal_moves.push(Move::new_push(&from, &to));
+                    legal_moves.push(Move::new_push(from, to));
                 }
             }
 
@@ -188,17 +190,19 @@ impl Position {
             let double_push = single_push.rotate_left(rotate) & push_mask;
             for (_, to) in double_push.iter() {
                 if to.rank_index() == double_push_rank_index {
-                    legal_moves.push(Move::new_push_double_pawn(&from, &to));
+                    legal_moves.push(Move::new_push_double_pawn(from, to));
                 }
             }
 
             // Captures
             for (_, to) in (from_board.pawn_attacks(&self.side_to_move) & capture_mask).iter() {
                 if to.rank_index() == promotion_rank_index {
-                    // TODO: benchmark if this is the fastest way to add multiple items (maybe returning an array is faster?)
-                    legal_moves.append(&mut Move::all_capture_promotions(&from, &to));
+                    legal_moves.push(Move::new_capture_promotion(from, to, QUEEN));
+                    legal_moves.push(Move::new_capture_promotion(from, to, ROOK));
+                    legal_moves.push(Move::new_capture_promotion(from, to, BISHOP));
+                    legal_moves.push(Move::new_capture_promotion(from, to, KNIGHT));
                 } else {
-                    legal_moves.push(Move::new_capture(&from, &to));
+                    legal_moves.push(Move::new_capture(from, to));
                 }
             }
         }
@@ -209,13 +213,13 @@ impl Position {
         for (from_board, from) in (pinned_pawns & king_square.file()).iter() {
             let single_push = from_board.rotate_left(rotate) & push_mask;
             for (_, to) in single_push.iter() {
-                legal_moves.push(Move::new_push(&from, &to));
+                legal_moves.push(Move::new_push(from, to));
             }
 
             let double_push = single_push.rotate_left(rotate) & push_mask;
             for (_, to) in double_push.iter() {
                 if to.rank_index() == double_push_rank_index {
-                    legal_moves.push(Move::new_push_double_pawn(&from, &to));
+                    legal_moves.push(Move::new_push_double_pawn(from, to));
                 }
             }
         }
@@ -226,7 +230,7 @@ impl Position {
             for (_, to) in
                 (from_board.pawn_attacks(&self.side_to_move) & diagonals & capture_mask).iter()
             {
-                legal_moves.push(Move::new_capture(&from, &to))
+                legal_moves.push(Move::new_capture(from, to))
             }
         }
 
@@ -269,7 +273,7 @@ impl Position {
                         }
                     };
                     if !is_discovered_check {
-                        legal_moves.push(Move::new_capture_en_passant(&from, &en_passant_target));
+                        legal_moves.push(Move::new_capture_en_passant(from, en_passant_target));
                     }
                 }
             }
