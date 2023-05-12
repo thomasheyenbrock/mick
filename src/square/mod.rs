@@ -1,7 +1,9 @@
 mod consts;
 mod rays;
 
-use self::consts::{DIAGONAL_RAYS, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS};
+use self::consts::{
+    DIAGONAL_RAYS, KING_MOVES, KNIGHT_MOVES, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS,
+};
 use crate::board::{Board, FILES};
 use std::fmt::Display;
 
@@ -53,6 +55,14 @@ impl Square {
 
     pub fn from(rank: u8, file: u8) -> Square {
         Square(rank * 8 + file)
+    }
+
+    pub fn king_moves(self) -> Board {
+        unsafe { *KING_MOVES.get_unchecked(self.0 as usize) }
+    }
+
+    pub fn knight_moves(self) -> Board {
+        unsafe { *KNIGHT_MOVES.get_unchecked(self.0 as usize) }
     }
 
     pub fn lines_along(&self, rhs: &Self) -> Board {

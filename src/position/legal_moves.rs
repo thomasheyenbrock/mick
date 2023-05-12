@@ -30,7 +30,7 @@ impl Position {
         // King moves
         let king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
         let king_square = king.to_square();
-        let king_moves = king.king_attacks();
+        let king_moves = king_square.king_moves();
         for (to, _) in (king_moves & capture_mask & not_attacked).iter() {
             legal_moves.push(Move::new_capture(king_square, to));
         }
@@ -130,8 +130,8 @@ impl Position {
 
         // Knight moves (pinned knights can't move)
         let knight = self.piece_boards[KNIGHT.to_piece(self.state.side_to_move).0 as usize];
-        for (from, from_board) in (knight & !pinned).iter() {
-            let attacks = from_board.knight_attacks();
+        for (from, _) in (knight & !pinned).iter() {
+            let attacks = from.knight_moves();
             for (to, _) in (attacks & capture_mask).iter() {
                 legal_moves.push(Move::new_capture(from, to));
             }
@@ -466,7 +466,7 @@ mod tests {
         assert_eq!(position.legal_moves().len(), 6 + 3);
 
         // In the center
-        let position = Position::from_fen("7K/8/8/8/3K4/8/8/8 w - - 0 1");
+        let position = Position::from_fen("7K/8/8/8/3N4/8/8/8 w - - 0 1");
         assert_eq!(position.legal_moves().len(), 8 + 3);
     }
 
