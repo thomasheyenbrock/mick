@@ -17,7 +17,6 @@ impl Display for Castle {
 pub struct CastlingRights(pub u8);
 
 pub const NO_RIGHTS: CastlingRights = CastlingRights(0);
-#[cfg(test)]
 pub const ALL_RIGHTS: CastlingRights = CastlingRights(0b1111);
 pub const WHITE_RIGHTS: CastlingRights = CastlingRights(0b0011);
 #[cfg(test)]

@@ -1,10 +1,10 @@
 use std::{fmt::Display, ops::Not};
 
-// TODO: remove Eq
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Side(pub u8);
 
-const CHARS: [char; 2] = ['w', 'b'];
+pub const WHITE: Side = Side(0);
+pub const BLACK: Side = Side(1);
 
 impl Side {
     pub fn try_from_str(s: &str) -> Result<Side, String> {
@@ -16,6 +16,12 @@ impl Side {
     }
 }
 
+impl Display for Side {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", CHARS[self.0 as usize])
+    }
+}
+
 impl Not for Side {
     type Output = Side;
 
@@ -24,14 +30,7 @@ impl Not for Side {
     }
 }
 
-impl Display for Side {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", CHARS[self.0 as usize])
-    }
-}
-
-pub const WHITE: Side = Side(0);
-pub const BLACK: Side = Side(1);
+const CHARS: [char; 2] = ['w', 'b'];
 
 #[cfg(test)]
 mod tests {

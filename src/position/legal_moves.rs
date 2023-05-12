@@ -1,4 +1,3 @@
-use super::Position;
 use crate::{
     board::{Board, EMPTY, NOT_FILE_A, NOT_FILE_H, RANK_4, RANK_5},
     castle::{KING_SIDE, QUEEN_SIDE},
@@ -6,6 +5,7 @@ use crate::{
     piece::{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     side::{Side, WHITE},
     square::{Square, C1, C8, E1, E8, G1, G8},
+    Position,
 };
 
 impl Position {
@@ -283,7 +283,7 @@ impl Position {
             return;
         }
 
-        let push_shift = if side_to_move == WHITE { 8 } else { 56 };
+        let push_shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
         let double_push_mask = push_mask
             & if side_to_move == WHITE {
                 RANK_4
@@ -343,7 +343,7 @@ impl Position {
             return;
         }
 
-        let shift = if side_to_move == WHITE { 8 } else { 56 };
+        let shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
         let empty_squares = self.empty();
 
         // Dont apply to_mask here to avoid masking double pushes
@@ -449,7 +449,7 @@ const FROM_TO_SQUARES: [[(Square, Square); 2]; 2] = [
 // maps: side -> capture-direction -> shift amount + overflow mask
 const PAWN_CAPTURE_FILE_MASKS: [[(u8, Board); 2]; 2] = [
     [(7, NOT_FILE_H), (9, NOT_FILE_A)],
-    [(55, NOT_FILE_H), (57, NOT_FILE_A)],
+    [(64 - 9, NOT_FILE_H), (64 - 7, NOT_FILE_A)],
 ];
 
 #[cfg(test)]

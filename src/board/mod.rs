@@ -104,6 +104,14 @@ impl Display for Board {
     }
 }
 
+impl Not for Board {
+    type Output = Board;
+
+    fn not(self) -> Board {
+        Board(!self.0)
+    }
+}
+
 impl Shl<u8> for Board {
     type Output = Board;
 
@@ -117,14 +125,6 @@ impl Shr<u8> for Board {
 
     fn shr(self, amount: u8) -> Board {
         Board(self.0 >> amount)
-    }
-}
-
-impl Not for Board {
-    type Output = Board;
-
-    fn not(self) -> Board {
-        Board(!self.0)
     }
 }
 

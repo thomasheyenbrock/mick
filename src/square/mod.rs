@@ -7,13 +7,6 @@ use self::consts::{
 use crate::board::{Board, FILE_A};
 use std::fmt::Display;
 
-static NAMES: [&str; 64] = [
-    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
-    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
-    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
-    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-];
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Square(pub u8);
 
@@ -37,12 +30,16 @@ impl Square {
         Square((self.0 & 56) | (other.0 & 7))
     }
 
-    pub fn between(self, rhs: Self) -> Board {
-        SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
+    pub fn between(self, other: Square) -> Board {
+        unsafe {
+            *SQUARES_BETWEEN
+                .get_unchecked(self.0 as usize)
+                .get_unchecked(other.0 as usize)
+        }
     }
 
     pub fn diagonal_rays(self) -> Board {
-        DIAGONAL_RAYS[self.0 as usize]
+        unsafe { *DIAGONAL_RAYS.get_unchecked(self.0 as usize) }
     }
 
     pub fn file_index(self) -> u8 {
@@ -65,8 +62,12 @@ impl Square {
         unsafe { *KNIGHT_MOVES.get_unchecked(self.0 as usize) }
     }
 
-    pub fn lines_along(self, rhs: Self) -> Board {
-        LINES_ALONG[self.0 as usize][rhs.0 as usize]
+    pub fn lines_along(self, other: Square) -> Board {
+        unsafe {
+            *LINES_ALONG
+                .get_unchecked(self.0 as usize)
+                .get_unchecked(other.0 as usize)
+        }
     }
 
     pub fn rotate_right(self, amount: u8) -> Square {
@@ -74,17 +75,33 @@ impl Square {
     }
 
     pub fn straight_rays(self) -> Board {
-        STRAIGHT_RAYS[self.0 as usize]
+        unsafe { *STRAIGHT_RAYS.get_unchecked(self.0 as usize) }
     }
 
-    pub fn try_from_str(s: &str) -> Result<Self, String> {
-        for (i, square) in NAMES.iter().enumerate() {
-            if s == *square {
-                return Ok(Self(i as u8));
-            }
+    pub fn try_from_str(s: &str) -> Result<Option<Square>, String> {
+        if s == "-" {
+            return Ok(None);
         }
 
-        Err(format!("Invalid square: {s}"))
+        if s.len() < 2 {
+            return Err("String too short".to_string());
+        }
+
+        let col_char = s.chars().next().unwrap() as usize;
+        let row_char = s.chars().nth(1).unwrap() as usize;
+
+        let col = col_char - 'a' as usize;
+        let row = row_char - '1' as usize;
+
+        if col > 7 {
+            return Err(format!("Bad column identifier: {}", col_char));
+        }
+
+        if row > 7 {
+            return Err(format!("Bad row identifier: {}", row_char));
+        }
+
+        Ok(Some(Square::from(row as u8, col as u8)))
     }
 }
 
@@ -94,18 +111,25 @@ impl Display for Square {
     }
 }
 
+const NAMES: [&str; 64] = [
+    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+    "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+    "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+];
+
 #[cfg(test)]
 mod tests {
     use crate::square::Square;
 
     #[test]
     fn try_from_valid() {
-        assert_eq!(Square::try_from_str("a1"), Ok(Square(0)));
-        assert_eq!(Square::try_from_str("b1"), Ok(Square(1)));
-        assert_eq!(Square::try_from_str("h1"), Ok(Square(7)));
-        assert_eq!(Square::try_from_str("d4"), Ok(Square(27)));
-        assert_eq!(Square::try_from_str("a8"), Ok(Square(56)));
-        assert_eq!(Square::try_from_str("h8"), Ok(Square(63)));
+        assert_eq!(Square::try_from_str("a1"), Ok(Some(Square(0))));
+        assert_eq!(Square::try_from_str("b1"), Ok(Some(Square(1))));
+        assert_eq!(Square::try_from_str("h1"), Ok(Some(Square(7))));
+        assert_eq!(Square::try_from_str("d4"), Ok(Some(Square(27))));
+        assert_eq!(Square::try_from_str("a8"), Ok(Some(Square(56))));
+        assert_eq!(Square::try_from_str("h8"), Ok(Some(Square(63))));
     }
 
     #[test]

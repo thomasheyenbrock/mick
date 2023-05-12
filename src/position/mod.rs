@@ -2,7 +2,6 @@ mod fen;
 mod legal_moves;
 mod r#move;
 
-pub use self::fen::STARTING_POSITION_FEN;
 use crate::{
     board::{Board, EMPTY},
     castle::CastlingRights,
@@ -13,6 +12,8 @@ use crate::{
     utils::grid_to_string_with_props,
 };
 use std::fmt::Display;
+
+pub const STARTING_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct State {
@@ -104,7 +105,7 @@ impl Display for Position {
         ];
         let s = grid_to_string_with_props(
             |s: Square| -> char {
-                let piece = self.pieces[s.0 as usize];
+                let piece = self.at(s);
                 if piece.is_some() {
                     piece.to_char()
                 } else {

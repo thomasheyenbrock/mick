@@ -1,62 +1,80 @@
-use super::Position;
+use super::State;
 use crate::{
-    castle::CastlingRights,
+    castle::{CastlingRights, ALL_RIGHTS},
     piece::{Piece, NULL_PIECE},
-    position::State,
-    side::Side,
+    side::{Side, WHITE},
     square::Square,
+    Position,
 };
 
-pub const STARTING_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
 impl Position {
-    pub fn from_fen(fen: &str) -> Self {
-        let parts: Vec<&str> = fen.split(" ").collect();
-        assert!(parts.len() == 6, "Invalid FEN {fen}");
+    pub fn from_fen(fen: &str) -> Position {
+        Position::try_from_fen(fen).expect("Invalid fen")
+    }
 
-        let mut pieces = [NULL_PIECE; 64];
-        for (rank_index, rank) in parts[0].split("/").enumerate() {
-            let mut file_index = 0;
-            for char in rank.chars() {
-                if let Ok(piece) = Piece::try_from_char(char) {
-                    let square_index = (7 - rank_index) * 8 + file_index;
-                    pieces[square_index] = piece;
+    pub fn try_from_fen(fen: &str) -> Result<Position, String> {
+        let mut state = State {
+            castling_rights: ALL_RIGHTS,
+            en_passant_target: None,
+            side_to_move: WHITE,
+            halfmove_clock: 0,
+            fullmove_number: 1,
+        };
 
-                    file_index += 1;
-                } else if let Some(digit) = char.to_digit(10) {
-                    file_index += digit as usize;
+        let parts: Vec<&str> = fen.split(' ').collect();
+        if parts.is_empty() {
+            return Err(format!("Not enough fields for FEN: {}", fen));
+        }
+
+        let mut grid = [NULL_PIECE; 64];
+
+        for (i, row_str) in parts[0].split('/').enumerate() {
+            if i >= 8 {
+                break;
+            }
+
+            let row = 7 - i;
+            let mut col = 0;
+            for c in row_str.chars() {
+                if ('1'..='8').contains(&c) {
+                    col += c as usize - '1' as usize;
                 } else {
-                    panic!("Invalid FEN {fen}")
+                    if col >= 8 {
+                        return Err(format!("Too many pieces on row {}", row + 1));
+                    }
+                    grid[Square::from(row as u8, col as u8).0 as usize] = Piece::try_from_char(c)?;
                 }
+                col += 1;
             }
         }
 
-        let side_to_move =
-            Side::try_from_str(unsafe { parts.get_unchecked(1) }).expect("Invalid FEN");
-        let castling_rights =
-            CastlingRights::try_from_str(unsafe { parts.get_unchecked(2) }).expect("Invalid FEN");
-        let en_passant_target = Square::try_from_str(unsafe { parts.get_unchecked(3) }).ok();
+        if parts.len() > 1 {
+            state.side_to_move = Side::try_from_str(parts[1])?;
+        }
 
-        let raw_halfmove_clock = unsafe { parts.get_unchecked(4) };
-        let raw_fullmove_number = unsafe { parts.get_unchecked(5) };
+        if parts.len() > 2 {
+            state.castling_rights = CastlingRights::try_from_str(parts[2])?;
+        }
 
-        let halfmove_clock = (*raw_halfmove_clock)
-            .parse::<u32>()
-            .expect(&format!("Invalid halfmove clock {raw_halfmove_clock}"));
-        let fullmove_number = (*raw_fullmove_number)
-            .parse::<u32>()
-            .expect(&format!("Invalid fullmove number {raw_fullmove_number}"));
+        if parts.len() > 3 {
+            state.en_passant_target = Square::try_from_str(parts[3])?;
+        }
 
-        Self::new(
-            pieces,
-            State {
-                side_to_move,
-                castling_rights,
-                en_passant_target,
-                halfmove_clock,
-                fullmove_number,
-            },
-        )
+        if parts.len() > 4 && parts[4] != "-" {
+            match parts[4].parse::<u32>() {
+                Ok(hmc) => state.halfmove_clock = hmc,
+                Err(err) => return Err(err.to_string()),
+            }
+        }
+
+        if parts.len() > 5 && parts[5] != "-" {
+            match parts[5].parse::<u32>() {
+                Ok(fmn) => state.fullmove_number = fmn,
+                Err(err) => return Err(err.to_string()),
+            }
+        }
+
+        Ok(Position::new(grid, state))
     }
 
     pub fn to_fen(&self) -> String {
@@ -115,8 +133,9 @@ mod tests {
             NULL_PIECE, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN,
             WHITE_ROOK,
         },
-        position::{Position, State, STARTING_POSITION_FEN},
+        position::{Position, State},
         side::WHITE,
+        STARTING_POSITION_FEN,
     };
 
     #[test]
