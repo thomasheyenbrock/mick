@@ -57,6 +57,10 @@ impl MoveAdder for MoveCounter {
         self.promotions += promo_count;
     }
 
+    fn add_double_pawn_pushes(&mut self, _: u8, targets: Board) {
+        self.moves += targets.occupied() as u64;
+    }
+
     fn add_pawn_captures(&mut self, _: u8, targets: Board) {
         // non-promotions
         let non_promo_count = (targets & !END_RANKS).occupied();

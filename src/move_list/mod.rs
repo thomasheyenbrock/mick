@@ -12,6 +12,8 @@ pub trait MoveAdder {
 
     fn add_pawn_pushes(&mut self, shift: u8, targets: Board);
 
+    fn add_double_pawn_pushes(&mut self, shift: u8, targets: Board);
+
     fn add_pawn_captures(&mut self, shift: u8, targets: Board);
 
     fn add_pawn_ep_capture(&mut self, from: Square, to: Square);

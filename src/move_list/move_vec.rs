@@ -48,6 +48,10 @@ impl MoveAdder for MoveVec {
         self.insert_moves_by_shift(shift, targets & !END_RANKS, Move::new_push);
     }
 
+    fn add_double_pawn_pushes(&mut self, shift: u8, targets: Board) {
+        self.insert_moves_by_shift(shift, targets, Move::new_push_double_pawn);
+    }
+
     fn add_pawn_captures(&mut self, shift: u8, targets: Board) {
         self.insert_promos_by_shift(shift, targets & END_RANKS, Move::new_capture_promotion);
         self.insert_moves_by_shift(shift, targets & !END_RANKS, Move::new_capture);

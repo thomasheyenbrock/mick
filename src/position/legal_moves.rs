@@ -283,7 +283,7 @@ impl Position {
             return;
         }
 
-        let push_shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
+        let push_shift = if side_to_move == WHITE { 8 } else { 56 };
         let double_push_mask = push_mask
             & if side_to_move == WHITE {
                 RANK_4
@@ -301,7 +301,7 @@ impl Position {
             list.add_pawn_pushes(push_shift, single_pushes);
             let double_pushes = single_pushes.rotate_left(push_shift as u32) & double_push_mask;
             let double_push_shift = (push_shift * 2) % 64;
-            list.add_pawn_pushes(double_push_shift, double_pushes);
+            list.add_double_pawn_pushes(double_push_shift, double_pushes);
         }
 
         for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
@@ -343,7 +343,7 @@ impl Position {
             return;
         }
 
-        let shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
+        let shift = if side_to_move == WHITE { 8 } else { 56 };
         let empty_squares = self.empty();
 
         // Dont apply to_mask here to avoid masking double pushes
@@ -361,7 +361,7 @@ impl Position {
 
         // DOUBLE PUSHES
         let double_push_shift = (shift * 2) % 64;
-        list.add_pawn_pushes(double_push_shift, double_pushes & to_mask);
+        list.add_double_pawn_pushes(double_push_shift, double_pushes & to_mask);
     }
 
     fn slider_moves<L: MoveAdder>(
@@ -449,7 +449,7 @@ const FROM_TO_SQUARES: [[(Square, Square); 2]; 2] = [
 // maps: side -> capture-direction -> shift amount + overflow mask
 const PAWN_CAPTURE_FILE_MASKS: [[(u8, Board); 2]; 2] = [
     [(7, NOT_FILE_H), (9, NOT_FILE_A)],
-    [(64 - 9, NOT_FILE_H), (64 - 7, NOT_FILE_A)],
+    [(55, NOT_FILE_H), (57, NOT_FILE_A)],
 ];
 
 #[cfg(test)]
