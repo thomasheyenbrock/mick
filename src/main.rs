@@ -11,6 +11,7 @@ mod board;
 mod castle;
 mod hash;
 mod r#move;
+mod move_list;
 mod perft;
 mod piece;
 mod position;

@@ -1,587 +1,775 @@
 use super::Position;
 use crate::{
-    board::{Board, RANKS},
-    castle::{
-        Castle, CastlingRights, BLACK_KING_SIDE, BLACK_QUEEN_SIDE, KING_SIDE, QUEEN_SIDE,
-        WHITE_KING_SIDE, WHITE_QUEEN_SIDE,
-    },
+    board::{Board, NOT_FILE_A, NOT_FILE_H, RANK_4, RANK_5},
+    castle::{KING_SIDE, QUEEN_SIDE},
+    move_list::MoveAdder,
     piece::{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
-    r#move::Move,
-    side::WHITE,
-    square::{Square, C1, C8, G1, G8},
+    side::{Side, WHITE},
+    square::{Square, C1, C8, E1, E8, G1, G8},
 };
 
 impl Position {
-    pub fn legal_moves(&self) -> Vec<Move> {
-        // TODO: find out the best value for capacity with benchmarks
-        let mut legal_moves = Vec::<Move>::with_capacity(60);
+    pub fn legal_moves<L: MoveAdder>(&self, list: &mut L) -> bool {
+        let side_to_move = self.state.side_to_move;
+        let kings = self.piece(KING.to_piece(side_to_move));
 
-        let (attacked, checkers, pinned, pinners) = self.metadata();
-        let occupied = self.side_boards[0] | self.side_boards[1];
-        let empty_squares = !occupied;
+        let attacker = !side_to_move;
+        let occupied = self.occupied();
+        let king_sq = kings.to_square();
 
-        // Opponent pieces
-        let opponent_side = !self.state.side_to_move;
-        let mut capture_mask = self.side_boards[opponent_side.0 as usize];
-        // Empty squares
-        let mut push_mask = empty_squares;
-        let not_attacked = !attacked;
+        let opponent_kings = self.piece(KING.to_piece(attacker));
+        let opponent_queens = self.piece(QUEEN.to_piece(attacker));
+        let opponent_rooks = self.piece(ROOK.to_piece(attacker));
+        let opponent_bishops = self.piece(BISHOP.to_piece(attacker));
+        let opponent_knights = self.piece(KNIGHT.to_piece(attacker));
+        let opponent_pawns = self.piece(PAWN.to_piece(attacker));
 
-        // King moves
-        let king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
-        let king_square = king.to_square();
-        let king_moves = king_square.king_moves();
-        for (to, _) in (king_moves & capture_mask & not_attacked).iter() {
-            legal_moves.push(Move::new_capture(king_square, to));
-        }
-        for (to, _) in (king_moves & push_mask & not_attacked).iter() {
-            legal_moves.push(Move::new_capture(king_square, to));
-        }
-
-        match checkers.occupied() {
-            0 => {
-                // No checks
-            }
-            1 => {
-                // King is in check once, so other piece moves would need to capture the attacker or block the check
-                capture_mask = checkers;
-
-                let checker_square = checkers.to_square();
-
-                let queen = self.piece_boards[QUEEN.to_piece(!self.state.side_to_move).0 as usize];
-                let rook = self.piece_boards[ROOK.to_piece(!self.state.side_to_move).0 as usize];
-                let bishop =
-                    self.piece_boards[BISHOP.to_piece(!self.state.side_to_move).0 as usize];
-                let sliders = queen | rook | bishop;
-
-                if sliders & checkers == Board::EMPTY {
-                    // King is checked by a knight or pawn which can't be blocked
-                    push_mask = Board::EMPTY;
-                } else {
-                    push_mask = king_square.between(&checker_square);
-                }
-            }
-            _ => {
-                // King is in double-check, so the only legal moves are king moves
-                return legal_moves;
-            }
-        }
-
-        // Castles
-        for (castle, castling_rights, to, blocking, safe) in
-            CASTLE_BY_SIDE[self.state.side_to_move.0 as usize]
-        {
-            if self.state.castling_rights.0 & castling_rights.0 != 0
-                && occupied & blocking == Board::EMPTY
-                && safe & attacked == Board::EMPTY
-            {
-                legal_moves.push(Move::new_castle(king_square, to, castle))
-            }
-        }
-
-        // Slider moves
-        let queen = self.piece_boards[QUEEN.to_piece(self.state.side_to_move).0 as usize];
-        let rook = self.piece_boards[ROOK.to_piece(self.state.side_to_move).0 as usize];
-        let bishop = self.piece_boards[BISHOP.to_piece(self.state.side_to_move).0 as usize];
-
-        // Non-pinned straight sliders
-        for (from, _) in ((queen | rook) & !pinned).iter() {
-            let attacks = from.straight_attacks(occupied);
-            for (to, _) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(from, to));
-            }
-            for (to, _) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-        }
-
-        // Pinned straight sliders
-        for (from, _) in ((queen | rook) & pinned).iter() {
-            let attacks = from.straight_attacks(occupied) & from.lines_along(&king_square);
-            for (to, _) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(from, to));
-            }
-            for (to, _) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-        }
-
-        // Non-pinned diagonal sliders
-        for (from, _) in ((queen | bishop) & !pinned).iter() {
-            let attacks = from.diagonal_attacks(occupied);
-            for (to, _) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(from, to));
-            }
-            for (to, _) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-        }
-
-        // Pinned diagonal sliders
-        for (from, _) in ((queen | bishop) & pinned).iter() {
-            let attacks = from.diagonal_attacks(occupied) & from.lines_along(&king_square);
-            for (to, _) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(from, to));
-            }
-            for (to, _) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-        }
-
-        // Knight moves (pinned knights can't move)
-        let knight = self.piece_boards[KNIGHT.to_piece(self.state.side_to_move).0 as usize];
-        for (from, _) in (knight & !pinned).iter() {
-            let attacks = from.knight_moves();
-            for (to, _) in (attacks & capture_mask).iter() {
-                legal_moves.push(Move::new_capture(from, to));
-            }
-            for (to, _) in (attacks & push_mask).iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-        }
-
-        // Pawn moves
-        let pawn = self.piece_boards[PAWN.to_piece(self.state.side_to_move).0 as usize];
-        // TODO: make this an array lookup (if it's faster)
-        let (rotate, double_push_rank_index, promotion_rank_index) =
-            if self.state.side_to_move == WHITE {
-                (8, 3, 7)
-            } else {
-                (56, 4, 0)
-            };
-
-        // Non-pinned pawns
-        for (from, from_board) in (pawn & !pinned).iter() {
-            // Single pushes
-            let single_push = from_board.rotate_left(rotate) & empty_squares;
-            for (to, _) in (single_push & push_mask).iter() {
-                if to.rank_index() == promotion_rank_index {
-                    legal_moves.push(Move::new_push_promotion(from, to, QUEEN));
-                    legal_moves.push(Move::new_push_promotion(from, to, ROOK));
-                    legal_moves.push(Move::new_push_promotion(from, to, BISHOP));
-                    legal_moves.push(Move::new_push_promotion(from, to, KNIGHT));
-                } else {
-                    legal_moves.push(Move::new_push(from, to));
-                }
-            }
-
-            // Double pushes
-            let double_push = single_push.rotate_left(rotate) & push_mask;
-            for (to, _) in double_push.iter() {
-                if to.rank_index() == double_push_rank_index {
-                    legal_moves.push(Move::new_push_double_pawn(from, to));
-                }
-            }
-
-            // Captures
-            for (to, _) in (from_board.pawn_attacks(&self.state.side_to_move) & capture_mask).iter()
-            {
-                if to.rank_index() == promotion_rank_index {
-                    legal_moves.push(Move::new_capture_promotion(from, to, QUEEN));
-                    legal_moves.push(Move::new_capture_promotion(from, to, ROOK));
-                    legal_moves.push(Move::new_capture_promotion(from, to, BISHOP));
-                    legal_moves.push(Move::new_capture_promotion(from, to, KNIGHT));
-                } else {
-                    legal_moves.push(Move::new_capture(from, to));
-                }
-            }
-        }
-
-        let pinned_pawns = pawn & pinned;
-
-        // Pinned pawns on the same file as the king can porentially be pushed (but never promoted)
-        for (from, from_board) in (pinned_pawns & king_square.file()).iter() {
-            let single_push = from_board.rotate_left(rotate) & push_mask;
-            for (to, _) in single_push.iter() {
-                legal_moves.push(Move::new_push(from, to));
-            }
-
-            let double_push = single_push.rotate_left(rotate) & push_mask;
-            for (to, _) in double_push.iter() {
-                if to.rank_index() == double_push_rank_index {
-                    legal_moves.push(Move::new_push_double_pawn(from, to));
-                }
-            }
-        }
-
-        // Pinned pawns on the same diagonal as the king can only porentially capture the pinner
-        let diagonals = king_square.diagonal_rays();
-        for (from, from_board) in (pinned_pawns & diagonals).iter() {
-            for (to, _) in
-                (from_board.pawn_attacks(&self.state.side_to_move) & diagonals & capture_mask)
-                    .iter()
-            {
-                legal_moves.push(Move::new_capture(from, to))
-            }
-        }
-
-        // En-passant captures
-        if let Some(en_passant_target) = self.state.en_passant_target {
-            let capturers = pawn & en_passant_target.to_board().pawn_attacks(&opponent_side);
-
-            for (from, _) in capturers.iter() {
-                // Capturing is only possible when moving to a square in `push_mask`
-                // or capturing a piece on `capture_mask`
-                let capture_square = if self.state.side_to_move == WHITE {
-                    Square(en_passant_target.0 - 8)
-                } else {
-                    Square(en_passant_target.0 + 8)
-                };
-                if push_mask.has(&en_passant_target) || capture_mask.has(&capture_square) {
-                    let is_discovered_check = {
-                        let rank = RANKS[capture_square.0 as usize];
-                        if rank & king == Board::EMPTY {
-                            false
-                        } else {
-                            let opponent = !self.state.side_to_move;
-                            let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
-                            let rook = self.piece_boards[ROOK.to_piece(opponent).0 as usize];
-                            let potential_attackers = queen | rook;
-
-                            let mut occupied = occupied;
-                            occupied.flip_square(&from);
-                            occupied.flip_square(&capture_square);
-
-                            let mut is_discovered_check = false;
-                            for (attacker, _) in potential_attackers.iter() {
-                                if king_square.between(&attacker) & occupied == Board::EMPTY {
-                                    is_discovered_check = true;
-                                    break;
-                                }
-                            }
-
-                            is_discovered_check
-                        }
-                    };
-                    if !is_discovered_check {
-                        legal_moves.push(Move::new_capture_en_passant(from, en_passant_target));
-                    }
-                }
-            }
-        }
-
-        legal_moves
-    }
-
-    fn metadata(&self) -> (Board, Board, Board, Board) {
-        let friendly_king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
-
-        let occupied = self.side_boards[0] | self.side_boards[1];
-        let occupied_without_king = occupied ^ friendly_king;
-        let opponent = !self.state.side_to_move;
-
-        let king = self.piece_boards[KING.to_piece(opponent).0 as usize];
-        let queen = self.piece_boards[QUEEN.to_piece(opponent).0 as usize];
-        let rook = self.piece_boards[ROOK.to_piece(opponent).0 as usize];
-        let bishop = self.piece_boards[BISHOP.to_piece(opponent).0 as usize];
-        let knight = self.piece_boards[KNIGHT.to_piece(opponent).0 as usize];
-        let pawn = self.piece_boards[PAWN.to_piece(opponent).0 as usize];
-
-        let straight = queen | rook;
-        let diagonal = queen | bishop;
-
-        let attacked = king.king_attacks()
-            | straight.straight_attacks(occupied_without_king)
-            | diagonal.diagonal_attacks(occupied_without_king)
-            | knight.knight_attacks()
-            | pawn.pawn_attacks(&opponent);
-
-        let king_square = friendly_king.to_square();
-        let potential_attackers =
-            (straight & king_square.straight_rays()) | (diagonal & king_square.diagonal_rays());
+        let straight_attackers = opponent_queens | opponent_rooks;
+        let diagonal_attackers = opponent_queens | opponent_bishops;
 
         let mut checkers = Board::EMPTY;
         let mut pinned = Board::EMPTY;
         let mut pinners = Board::EMPTY;
 
-        for (square, _) in potential_attackers.iter() {
-            let between = square.between(&king_square);
+        // Pawns and Knights can only be checkers, not pinners
+        checkers |= king_sq.knight_moves() & opponent_knights;
 
-            if between & self.side_boards[opponent.0 as usize] != Board::EMPTY {
-                // There is another opponents piece in between the potential attacker and the king, nothing to do
-            } else if between & occupied == Board::EMPTY {
-                // No pieces between the attacker and the king
-                checkers.flip_square(&square);
-            } else {
-                let friendly_between =
-                    between & self.side_boards[self.state.side_to_move.0 as usize];
-                if friendly_between.occupied() == 1 {
-                    // There is exactly one friendly piece between the attacker and the king, so it's pinned
-                    pinned.flip_board(&friendly_between);
-                    pinners.flip_square(&square);
-                }
+        for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
+            checkers |= kings.rotate_left(shift as u32) & file_mask & opponent_pawns;
+        }
+
+        // Sliding pieces can be checkers or pinners depending on occupancy of intermediate squares
+        let potential_king_attackers = occupied
+            & ((king_sq.diagonal_rays() & diagonal_attackers)
+                | (king_sq.straight_rays() & straight_attackers));
+
+        for (sq, bb) in potential_king_attackers.iter() {
+            let potentially_pinned = king_sq.between(sq) & occupied;
+
+            // If there are no friendly pieces between the attacker and the king
+            // then the attacker is giving check
+            if potentially_pinned == Board::EMPTY {
+                checkers |= bb;
+            // If there is a friendly piece between the attacker and the king
+            // then it is pinned
+            } else if potentially_pinned.occupied() == 1 {
+                pinned |= potentially_pinned;
+                pinners |= bb;
             }
         }
 
-        // Pawns and knights can only be checkers, no pinners
-        checkers |= (friendly_king.knight_attacks() & knight)
-            | (friendly_king.pawn_attacks(&self.state.side_to_move) & pawn);
+        // We always need legal king moves
+        let occupied_without_king = occupied & !kings;
 
-        (attacked, checkers, pinned, pinners)
+        let mut attacked = opponent_kings.to_square().king_moves()
+            | straight_attackers.straight_attacks(occupied_without_king)
+            | diagonal_attackers.diagonal_attacks(occupied_without_king)
+            | opponent_knights.knight_attacks();
+
+        for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[attacker.0 as usize].iter() {
+            let targets = opponent_pawns.rotate_left(shift as u32) & file_mask;
+            attacked |= targets;
+        }
+
+        let king_attacks_count = checkers.occupied();
+
+        // capture_mask and push_mask represent squares our pieces are allowed to move to or capture,
+        // respectively. The difference between the two is only important for pawn EP captures
+        // Since push_mask is used to block a pin, we ignore push_mask when calculating king moves
+        let enemy = self.side(attacker);
+        let empty_squares = self.empty();
+
+        let mut capture_mask = enemy;
+        let king_capture_mask = enemy & !attacked;
+        let mut push_mask = empty_squares;
+        let king_push_mask = empty_squares & !attacked;
+
+        match king_attacks_count {
+            0 => (),
+            1 => {
+                // if ony one attacker, we can try attacking the attacker with
+                // our other pieces.
+                capture_mask = checkers;
+                let checker_sq = checkers.to_square();
+                let checker = self.at(checker_sq);
+                if checker.is_slider() {
+                    // If the piece giving check is a slider, we can additionally attempt
+                    // to block the sliding piece;
+                    push_mask = king_sq.between(checker_sq);
+                } else {
+                    // If we are in check by a jumping piece (aka a knight) then
+                    // there are no valid non-captures to avoid check
+                    push_mask = Board::EMPTY;
+                }
+            }
+            _ => {
+                // multiple attackers... only solutions are king moves
+                self.king_moves(king_capture_mask, king_push_mask, list);
+                return true;
+            }
+        }
+
+        // generate moves for pinned and unpinned sliders
+        self.slider_moves(capture_mask, push_mask, pinned, king_sq, list);
+
+        // generate moves for non-pinned knights (pinned knights can't move)
+        self.knight_moves(capture_mask, push_mask, !pinned, list);
+
+        // generate moves for unpinned pawns
+        self.pawn_pushes(push_mask, !pinned, list);
+        self.pawn_captures(capture_mask, push_mask, !pinned, list);
+
+        // generate moves for pinned pawns
+        // pinned pawn captures can only include pinners
+        self.pawn_pin_ray_moves(
+            capture_mask & pinners,
+            push_mask,
+            king_sq,
+            pinned,
+            side_to_move,
+            list,
+        );
+
+        if king_attacks_count == 0 {
+            // Not in check so can generate castles
+            // impossible for castles to be affected by pins
+            // so we don't need to consider pins here
+            self.castles(attacked, list);
+        }
+
+        self.king_moves(king_capture_mask, king_push_mask, list);
+
+        king_attacks_count > 0
+    }
+
+    fn castles<L: MoveAdder>(&self, attacked: Board, list: &mut L) {
+        let side_to_move = self.state.side_to_move;
+        let rights = self.state.castling_rights;
+        let occupied_squares = self.occupied();
+
+        for castle in [KING_SIDE, QUEEN_SIDE]
+            .iter()
+            .filter(|c| rights.has(**c, side_to_move))
+        {
+            // NOTE: should not need to check king and rook pos since
+            // should not be able to castle once these are moved
+
+            let blockers = CASTLE_BLOCKING_SQUARES[side_to_move.0 as usize][castle.0 as usize];
+            let king_safe = KING_SAFE_SQUARES[side_to_move.0 as usize][castle.0 as usize];
+            let (from, to) = FROM_TO_SQUARES[side_to_move.0 as usize][castle.0 as usize];
+
+            if (occupied_squares & blockers).any() | (attacked & king_safe).any() {
+                continue;
+            }
+
+            list.add_castle(from, to, *castle);
+        }
+    }
+
+    fn en_passant_move_discovers_check(&self, from: Board, to: Board, side: Side) -> bool {
+        let occupied = self.occupied() ^ from ^ to;
+        let attacker = !side;
+        let queens = self.piece(QUEEN.to_piece(attacker));
+        let rooks = self.piece(ROOK.to_piece(attacker));
+        let straight_attackers = queens | rooks;
+
+        let king_sq = self.piece(KING.to_piece(side)).to_square();
+
+        king_sq.straight_attacks(occupied) & straight_attackers != Board::EMPTY
+    }
+
+    fn king_moves<L: MoveAdder>(&self, capture_mask: Board, push_mask: Board, list: &mut L) {
+        let side_to_move = self.state.side_to_move;
+        let piece = KING.to_piece(side_to_move);
+        let movers = self.piece(piece);
+
+        let from = movers.to_square();
+
+        let capture_targets = from.king_moves() & capture_mask;
+        let push_targets = from.king_moves() & push_mask;
+
+        list.add_captures(from, capture_targets);
+        list.add_pushes(from, push_targets);
+    }
+
+    fn knight_moves<L: MoveAdder>(
+        &self,
+        capture_mask: Board,
+        push_mask: Board,
+        from_mask: Board,
+        list: &mut L,
+    ) {
+        let side_to_move = self.state.side_to_move;
+        let piece = KNIGHT.to_piece(side_to_move);
+        let movers = self.piece(piece) & from_mask;
+
+        for (from, _) in movers.iter() {
+            let capture_targets = from.knight_moves() & capture_mask;
+            let push_targets = from.knight_moves() & push_mask;
+
+            list.add_captures(from, capture_targets);
+            list.add_pushes(from, push_targets);
+        }
+    }
+
+    fn pawn_captures<L: MoveAdder>(
+        &self,
+        capture_mask: Board,
+        push_mask: Board,
+        from_mask: Board,
+        list: &mut L,
+    ) {
+        let side_to_move = self.state.side_to_move;
+        let piece = PAWN.to_piece(side_to_move);
+        let movers = self.piece(piece) & from_mask;
+
+        if movers == Board::EMPTY {
+            return;
+        }
+
+        if capture_mask != Board::EMPTY {
+            // CAPTURES
+            for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
+                let targets = movers.rotate_left(shift as u32) & file_mask & capture_mask;
+                list.add_pawn_captures(shift, targets);
+            }
+        }
+
+        if self.state.en_passant_target.is_some() {
+            let ep = self.state.en_passant_target.unwrap();
+            // This is rare so worth duplicating work here to avoid doing it above
+            for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
+                // EN-PASSANT CAPTURES
+                let targets = movers.rotate_left(shift as u32) & file_mask;
+                let ep_captures = targets & Board::new(ep);
+                for (to, to_bb) in ep_captures.iter() {
+                    let from = to.rotate_right(shift);
+
+                    let capture_sq = from.along_row_with_col(to);
+                    let capture_sq_bb = Board::new(capture_sq);
+
+                    // can only make ep capture if moving to push_mask, or capturing on capture mask
+                    if ((to_bb & push_mask) | (capture_sq_bb & capture_mask)).any() {
+                        // here we need to ensure that there is no discovered check
+                        let from_bb = to_bb.rotate_right(shift as u32);
+                        // This is expensive but very infrequent
+                        if !self.en_passant_move_discovers_check(
+                            from_bb,
+                            capture_sq_bb,
+                            side_to_move,
+                        ) {
+                            list.add_pawn_ep_capture(from_bb.to_square(), ep);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn pawn_pin_ray_moves<L: MoveAdder>(
+        &self,
+        capture_mask: Board,
+        push_mask: Board,
+        king_sq: Square,
+        pinned: Board,
+        side_to_move: Side,
+        list: &mut L,
+    ) {
+        let piece = PAWN.to_piece(side_to_move);
+        let movers = self.piece(piece) & pinned;
+
+        // exit early if no pinned pawns
+        if movers == Board::EMPTY {
+            return;
+        }
+
+        let push_shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
+        let double_push_mask = push_mask
+            & if side_to_move == WHITE {
+                RANK_4
+            } else {
+                RANK_5
+            };
+
+        let can_push = movers & king_sq.file_mask();
+        let king_diags = king_sq.diagonal_rays();
+        let can_capture = movers & king_diags;
+
+        // For pinned pawns, only possible moves are those along the king file
+        for (_, pawn) in can_push.iter() {
+            let single_pushes = pawn.rotate_left(push_shift as u32) & push_mask;
+            list.add_pawn_pushes(push_shift, single_pushes);
+            let double_pushes = single_pushes.rotate_left(push_shift as u32) & double_push_mask;
+            let double_push_shift = (push_shift * 2) % 64;
+            list.add_pawn_pushes(double_push_shift, double_pushes);
+        }
+
+        for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
+            let targets =
+                can_capture.rotate_left(shift as u32) & file_mask & capture_mask & king_diags;
+
+            list.add_pawn_captures(shift, targets);
+        }
+
+        if self.state.en_passant_target.is_some() {
+            for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
+                let targets = can_capture.rotate_left(shift as u32) & file_mask;
+
+                let ep = self.state.en_passant_target.unwrap();
+                let ep_captures = targets & Board::new(ep) & king_diags;
+
+                for (to, to_bb) in ep_captures.iter() {
+                    let from = to.rotate_right(shift);
+
+                    let capture_sq = from.along_row_with_col(to);
+                    let capture_sq_bb = Board::new(capture_sq);
+
+                    // can only make ep capture if moving along king_diags, or capturing on capture mask
+                    if ((to_bb & king_diags) | (capture_sq_bb & capture_mask)).any() {
+                        let from_bb = to_bb.rotate_right(shift as u32);
+                        list.add_pawn_ep_capture(from_bb.to_square(), ep);
+                    }
+                }
+            }
+        }
+    }
+
+    fn pawn_pushes<L: MoveAdder>(&self, to_mask: Board, from_mask: Board, list: &mut L) {
+        let side_to_move = self.state.side_to_move;
+        let piece = PAWN.to_piece(side_to_move);
+        let movers = self.piece(piece) & from_mask;
+
+        if movers == Board::EMPTY {
+            return;
+        }
+
+        let shift = if side_to_move == WHITE { 8 } else { 64 - 8 };
+        let empty_squares = self.empty();
+
+        // Dont apply to_mask here to avoid masking double pushes
+        let single_pushes = movers.rotate_left(shift as u32) & empty_squares;
+
+        list.add_pawn_pushes(shift, single_pushes & to_mask);
+
+        let double_push_mask = if side_to_move == WHITE {
+            RANK_4
+        } else {
+            RANK_5
+        } & empty_squares
+            & to_mask;
+        let double_pushes = single_pushes.rotate_left(shift as u32) & double_push_mask;
+
+        // DOUBLE PUSHES
+        let double_push_shift = (shift * 2) % 64;
+        list.add_pawn_pushes(double_push_shift, double_pushes & to_mask);
+    }
+
+    fn slider_moves<L: MoveAdder>(
+        &self,
+        capture_mask: Board,
+        push_mask: Board,
+        pinned_mask: Board,
+        king_sq: Square,
+        list: &mut L,
+    ) {
+        let side_to_move = self.state.side_to_move;
+        let occupied = self.occupied();
+        let queens = self.piece(QUEEN.to_piece(side_to_move));
+        let rooks = self.piece(ROOK.to_piece(side_to_move));
+        let bishops = self.piece(BISHOP.to_piece(side_to_move));
+        let diagonal_attackers = queens | bishops;
+        let straight_attackers = queens | rooks;
+
+        for (from, _) in (straight_attackers & !pinned_mask).iter() {
+            let targets = from.straight_attacks(occupied);
+            list.add_captures(from, targets & capture_mask);
+            list.add_pushes(from, targets & push_mask);
+        }
+
+        for (from, _) in (straight_attackers & pinned_mask).iter() {
+            let ray_mask = from.lines_along(king_sq);
+            let targets = from.straight_attacks(occupied) & ray_mask;
+            list.add_captures(from, targets & capture_mask);
+            list.add_pushes(from, targets & push_mask);
+        }
+
+        for (from, _) in (diagonal_attackers & !pinned_mask).iter() {
+            let targets = from.diagonal_attacks(occupied);
+            list.add_captures(from, targets & capture_mask);
+            list.add_pushes(from, targets & push_mask);
+        }
+
+        for (from, _) in (diagonal_attackers & pinned_mask).iter() {
+            let ray_mask = from.lines_along(king_sq);
+            let targets = from.diagonal_attacks(occupied) & ray_mask;
+            list.add_captures(from, targets & capture_mask);
+            list.add_pushes(from, targets & push_mask);
+        }
     }
 }
 
-static CASTLE_BY_SIDE: [[(Castle, CastlingRights, Square, Board, Board); 2]; 2] = [
+const CASTLE_BLOCKING_SQUARES: [[Board; 2]; 2] = [
     [
-        (
-            KING_SIDE,
-            WHITE_KING_SIDE,
-            G1,
-            Board::WHITE_KINGSIDE_BLOCKING,
-            Board::WHITE_KINGSIDE_SAFE,
-        ),
-        (
-            QUEEN_SIDE,
-            WHITE_QUEEN_SIDE,
-            C1,
-            Board::WHITE_QUEENSIDE_BLOCKING,
-            Board::WHITE_QUEENSIDE_SAFE,
-        ),
+        Board((1u64 << 5) + (1u64 << 6)),               // WHITE KS = F1 + G1
+        Board((1u64 << 1) + (1u64 << 2) + (1u64 << 3)), // WHITE QS = B1 + C1 + D1
     ],
     [
-        (
-            KING_SIDE,
-            BLACK_KING_SIDE,
-            G8,
-            Board::BLACK_KINGSIDE_BLOCKING,
-            Board::BLACK_KINGSIDE_SAFE,
-        ),
-        (
-            QUEEN_SIDE,
-            BLACK_QUEEN_SIDE,
-            C8,
-            Board::BLACK_QUEENSIDE_BLOCKING,
-            Board::BLACK_QUEENSIDE_SAFE,
-        ),
+        Board((1u64 << 61) + (1u64 << 62)), // BLACK KS = F8 + G8
+        Board((1u64 << 57) + (1u64 << 58) + (1u64 << 59)), // BLACK QS = B8 + C8 + D1
     ],
+];
+
+// squares that must be not attacked for a castle to take place
+const KING_SAFE_SQUARES: [[Board; 2]; 2] = [
+    [
+        Board((1u64 << 4) + (1u64 << 5) + (1u64 << 6)), // WHITE KS = E1 + F1 + G1
+        Board((1u64 << 2) + (1u64 << 3) + (1u64 << 4)), // WHITE QS = C1 + D1 + E1
+    ],
+    [
+        Board((1u64 << 60) + (1u64 << 61) + (1u64 << 62)), // BLACK KS = E8 + F8 + G8
+        Board((1u64 << 58) + (1u64 << 59) + (1u64 << 60)), // BLACK QS = C8 + D8  + E8
+    ],
+];
+
+const FROM_TO_SQUARES: [[(Square, Square); 2]; 2] = [
+    [
+        (E1, G1), // WHITE KS
+        (E1, C1), // WHITE QS
+    ],
+    [
+        (E8, G8), // BLACK KS
+        (E8, C8), // BLACK QS
+    ],
+];
+
+// white, left  = +7 remove FILE_H
+// white, right = +9 remove FILE_A
+// black, left  = -9 remove FILE_H
+// black, right = -7 remove FILE_A
+// maps: side -> capture-direction -> shift amount + overflow mask
+const PAWN_CAPTURE_FILE_MASKS: [[(u8, Board); 2]; 2] = [
+    [(7, NOT_FILE_H), (9, NOT_FILE_A)],
+    [(64 - 9, NOT_FILE_H), (64 - 7, NOT_FILE_A)],
 ];
 
 #[cfg(test)]
 mod tests {
-    use crate::position::Position;
+    use crate::{move_list::move_counter::MoveCounter, position::Position};
 
     #[test]
     fn king_moves() {
         // In the corner
-        let position = Position::from_fen("8/8/8/8/8/8/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3);
+        let position = Position::from_fen("7k/8/8/8/8/8/8/K7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3);
 
         // At the edge of the board
-        let position = Position::from_fen("8/8/8/8/8/8/8/1K6 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 5);
+        let position = Position::from_fen("7k/8/8/8/8/8/8/1K6 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 5);
 
         // Else
-        let position = Position::from_fen("8/8/8/8/8/8/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 8);
+        let position = Position::from_fen("7k/8/8/8/8/8/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 8);
 
         // Castling
-        let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-        assert_eq!(position.legal_moves().len(), 5 + 19 + 2);
+        let position = Position::from_fen("6k1/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 5 + 19 + 2);
     }
 
     #[test]
     fn not_moving_king_in_check() {
         // Attacks by queens
-        let position = Position::from_fen("8/8/8/8/8/3q4/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3);
+        let position = Position::from_fen("7k/8/8/8/8/3q4/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3);
 
         // Attacks by rooks
-        let position = Position::from_fen("8/8/8/8/8/3r4/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 5);
+        let position = Position::from_fen("7k/8/8/8/8/3r4/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 5);
 
         // Attacks by bishops
-        let position = Position::from_fen("8/8/8/8/2b5/8/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 6);
+        let position = Position::from_fen("7k/8/8/8/2b5/8/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 6);
 
         // Attacks by knights
-        let position = Position::from_fen("8/8/8/8/3n4/8/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 6);
+        let position = Position::from_fen("7k/8/8/8/3n4/8/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 6);
 
         // Attacks by pawns
-        let position = Position::from_fen("8/8/8/8/p7/8/1K6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 7);
+        let position = Position::from_fen("7k/8/8/8/p7/8/1K6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 7);
     }
 
     #[test]
     fn queen_moves() {
         // In the corner
-        let position = Position::from_fen("8/8/8/8/8/8/7K/Q7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 21 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/Q7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 21 + 5);
 
         // At the edge of the board
-        let position = Position::from_fen("8/8/8/8/8/8/7K/1Q6 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 21 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/1Q6 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 21 + 5);
 
         // In the center of the board
-        let position = Position::from_fen("8/8/8/7K/3Q4/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 27 + 5);
+        let position = Position::from_fen("6k1/8/8/7K/3Q4/8/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 27 + 5);
     }
 
     #[test]
     fn rook_moves() {
         // In the corner
-        let position = Position::from_fen("8/8/8/8/8/8/7K/R7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 14 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/R7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 14 + 5);
 
         // At the edge of the board
-        let position = Position::from_fen("8/8/8/8/8/8/7K/1R6 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 14 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/1R6 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 14 + 5);
 
         // Else
-        let position = Position::from_fen("8/8/8/7K/3R4/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 14 + 5);
+        let position = Position::from_fen("6k1/8/8/7K/3R4/8/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 14 + 5);
     }
 
     #[test]
     fn bishop_moves() {
         // In the corner
-        let position = Position::from_fen("8/8/8/8/8/8/7K/B7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 7 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/B7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 7 + 5);
 
         // At the edge of the board
-        let position = Position::from_fen("8/8/8/8/8/8/7K/1B6 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 7 + 5);
+        let position = Position::from_fen("6k1/8/8/8/8/8/7K/1B6 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 7 + 5);
 
         // Else
-        let position = Position::from_fen("8/8/8/7K/3B4/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 13 + 5);
+        let position = Position::from_fen("6k1/8/8/7K/3B4/8/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 13 + 5);
     }
 
     #[test]
     fn knight_moves() {
         // In the corner
-        let position = Position::from_fen("7K/8/8/8/8/8/8/N7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 3);
+        let position = Position::from_fen("k6K/8/8/8/8/8/8/N7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 3);
 
         // One square from a corner
-        let position = Position::from_fen("7K/8/8/8/8/8/8/1N6 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 3);
+        let position = Position::from_fen("k6K/8/8/8/8/8/8/1N6 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 3);
 
         // Two squares from a corner
-        let position = Position::from_fen("7K/8/8/8/8/8/1N6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 4 + 3);
+        let position = Position::from_fen("k6K/8/8/8/8/8/1N6/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 4 + 3);
 
         // Three squares from a corner
-        let position = Position::from_fen("7K/8/8/8/8/1N6/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 6 + 3);
+        let position = Position::from_fen("k6K/8/8/8/8/1N6/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 6 + 3);
 
         // In the center
-        let position = Position::from_fen("7K/8/8/8/3N4/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 8 + 3);
+        let position = Position::from_fen("k6K/8/8/8/3N4/8/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 8 + 3);
     }
 
     #[test]
     fn pawn_moves() {
         // Single push
-        let position = Position::from_fen("7K/8/8/8/8/1P6/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 1 + 3);
+        let position = Position::from_fen("k6K/8/8/8/8/1P6/8/8 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 1 + 3);
 
         // Single push with captures
-        let position = Position::from_fen("7K/8/8/8/p1p5/1P6/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 3);
+        let position = Position::from_fen("8/8/8/8/p1p5/1P6/8/k6K w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 3);
 
         // Double push
-        let position = Position::from_fen("7K/8/8/8/8/8/1P6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 3);
+        let position = Position::from_fen("8/8/8/8/8/8/1P6/k6K w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 3);
 
         // Double push with captures
-        let position = Position::from_fen("7K/8/8/8/8/p1p5/1P6/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 4 + 3);
+        let position = Position::from_fen("8/8/8/8/8/p1p5/1P6/k6K w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 4 + 3);
 
         // Promotion
-        let position = Position::from_fen("7K/1P6/8/8/8/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 4 + 3);
+        let position = Position::from_fen("8/1P6/8/8/8/8/8/k6K w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 4 + 3);
 
         // Promotion with captures
-        let position = Position::from_fen("p1p4K/1P6/8/8/8/8/8/8 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 12 + 3);
+        let position = Position::from_fen("p1p5/1P6/8/8/8/8/8/k6K w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 12 + 3);
 
         // En-passant capture
-        let position = Position::from_fen("7K/8/8/pP6/8/8/8/8 w - a6 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 3);
+        let position = Position::from_fen("8/8/8/pP6/8/8/8/k6K w - a6 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 3);
     }
 
     #[test]
     fn double_check() {
-        let position = Position::from_fen("4q3/8/b7/8/8/7R/3PK3/5N2 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3);
+        let position = Position::from_fen("k3q3/8/b7/8/8/7R/3PK3/5N2 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3);
     }
 
     #[test]
     fn single_check() {
         // Moving the king
-        let position = Position::from_fen("q7/8/8/8/8/8/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2);
+        let position = Position::from_fen("q6k/8/8/8/8/8/8/K7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2);
 
         // Capturing the checker
-        let position = Position::from_fen("qR6/8/8/8/8/8/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 1);
+        let position = Position::from_fen("qR5k/8/8/8/8/8/8/K7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 1);
 
         // Blocking the check
-        let position = Position::from_fen("q7/1R6/8/8/8/8/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 1);
+        let position = Position::from_fen("q6k/1R6/8/8/8/8/8/K7 w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 1);
     }
 
     #[test]
     fn pinned_straight_sliders() {
         // Pinned by diagonal slider
-        let position = Position::from_fen("7q/8/8/8/8/2R5/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 0);
+        let position = Position::from_fen("7q/8/8/8/8/2R5/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 0);
 
         // Pinned by straight slider
-        let position = Position::from_fen("q7/8/8/8/8/R7/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 6);
+        let position = Position::from_fen("q7/8/8/8/8/R7/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 6);
     }
 
     #[test]
     fn pinned_diagonal_sliders() {
-        let position = Position::from_fen("7q/8/8/8/8/2B5/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 6);
+        let position = Position::from_fen("7q/8/8/8/8/2B5/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 6);
 
         // Diagonal slider pinned by straight slider
-        let position = Position::from_fen("q7/8/8/8/8/B7/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 0);
+        let position = Position::from_fen("q7/8/8/8/8/B7/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 0);
     }
 
     #[test]
     fn pinned_knights() {
-        let position = Position::from_fen("q7/8/8/8/8/N7/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 0);
+        let position = Position::from_fen("q7/8/8/8/8/N7/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 0);
     }
 
     #[test]
     fn pinned_pawns() {
         // Pinned in the direction of movement
-        let position = Position::from_fen("q7/8/8/8/8/P7/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 1);
+        let position = Position::from_fen("q7/8/8/8/8/P7/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 1);
 
         // With double-push pinned in the direction of movement
-        let position = Position::from_fen("q7/8/8/8/8/8/P7/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 2 + 2);
+        let position = Position::from_fen("q7/8/8/8/8/8/P7/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 2 + 2);
 
         // Pinned not in the direction of movement
-        let position = Position::from_fen("7q/8/8/8/1p6/2P5/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 0);
+        let position = Position::from_fen("7q/8/8/8/1p6/2P5/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 0);
 
         // Pinned not in the direction of movement that can capture the attacker
-        let position = Position::from_fen("8/8/8/8/1p1q4/2P5/8/K7 w - - 0 1");
-        assert_eq!(position.legal_moves().len(), 3 + 1);
+        let position = Position::from_fen("8/8/8/8/1p1q4/2P5/8/K6k w - - 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 3 + 1);
     }
 
     #[test]
     fn en_passant_discovered_check() {
-        let position = Position::from_fen("8/8/8/K2Pp2q/8/8/8/8 w - e6 0 1");
-        assert_eq!(position.legal_moves().len(), 5 + 1);
+        let position = Position::from_fen("7k/8/8/K2Pp2q/8/8/8/8 w - e6 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 5 + 1);
     }
 
     #[test]
     fn en_passant_when_in_check() {
         // Capturing the checker not possible
-        let position = Position::from_fen("8/K6q/8/3Pp3/8/8/8/8 w - e6 0 1");
-        assert_eq!(position.legal_moves().len(), 4 + 0);
+        let position = Position::from_fen("8/K6q/8/3Pp3/8/8/8/7k w - e6 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 4 + 0);
 
         // Capturing the checker possible
-        let position = Position::from_fen("8/8/8/3Pp3/5K2/8/8/8 w - e6 0 1");
-        assert_eq!(position.legal_moves().len(), 8 + 1);
+        let position = Position::from_fen("8/8/8/3Pp3/5K2/8/8/7k w - e6 0 1");
+        let mut moves = MoveCounter::new();
+        position.legal_moves(&mut moves);
+        assert_eq!(moves.moves, 8 + 1);
     }
 }

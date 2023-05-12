@@ -214,8 +214,6 @@ mod tests {
         Position,
     };
 
-    // TODO: use getters over piece_boards and side_boards
-
     #[test]
     fn king_push() {
         let p1 = Position::from_fen("8/8/8/8/8/8/8/K7 w - - 0 1");
@@ -227,14 +225,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[0], NULL_PIECE);
         assert_eq!(p2.pieces[8], WHITE_KING);
-        assert_eq!(
-            p2.piece_boards[WHITE_KING.0 as usize],
-            Board(0x0000_0000_0000_0100)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0000_0100)
-        );
+        assert_eq!(p2.piece(WHITE_KING), Board(0x0000_0000_0000_0100));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0000_0100));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -256,16 +248,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[0], NULL_PIECE);
         assert_eq!(p2.pieces[8], WHITE_KING);
-        assert_eq!(
-            p2.piece_boards[WHITE_KING.0 as usize],
-            Board(0x0000_0000_0000_0100)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0000_0100)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_KING), Board(0x0000_0000_0000_0100));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0000_0100));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -289,18 +275,9 @@ mod tests {
         assert_eq!(p2.pieces[7], NULL_PIECE);
         assert_eq!(p2.pieces[6], WHITE_KING);
         assert_eq!(p2.pieces[5], WHITE_ROOK);
-        assert_eq!(
-            p2.piece_boards[WHITE_KING.0 as usize],
-            Board(0x0000_0000_0000_0040)
-        );
-        assert_eq!(
-            p2.piece_boards[WHITE_ROOK.0 as usize],
-            Board(0x0000_0000_0000_0021)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0000_0061)
-        );
+        assert_eq!(p2.piece(WHITE_KING), Board(0x0000_0000_0000_0040));
+        assert_eq!(p2.piece(WHITE_ROOK), Board(0x0000_0000_0000_0021));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0000_0061));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -324,18 +301,9 @@ mod tests {
         assert_eq!(p2.pieces[0], NULL_PIECE);
         assert_eq!(p2.pieces[2], WHITE_KING);
         assert_eq!(p2.pieces[3], WHITE_ROOK);
-        assert_eq!(
-            p2.piece_boards[WHITE_KING.0 as usize],
-            Board(0x0000_0000_0000_0004)
-        );
-        assert_eq!(
-            p2.piece_boards[WHITE_ROOK.0 as usize],
-            Board(0x0000_0000_0000_0088)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0000_008C)
-        );
+        assert_eq!(p2.piece(WHITE_KING), Board(0x0000_0000_0000_0004));
+        assert_eq!(p2.piece(WHITE_ROOK), Board(0x0000_0000_0000_0088));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0000_008C));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -357,14 +325,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[62], WHITE_QUEEN);
-        assert_eq!(
-            p2.piece_boards[WHITE_QUEEN.0 as usize],
-            Board(0x4000_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x4000_0000_0000_0001)
-        );
+        assert_eq!(p2.piece(WHITE_QUEEN), Board(0x4000_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -386,16 +348,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[62], WHITE_QUEEN);
-        assert_eq!(
-            p2.piece_boards[WHITE_QUEEN.0 as usize],
-            Board(0x4000_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x4000_0000_0000_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_QUEEN), Board(0x4000_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -417,14 +373,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[56], WHITE_ROOK);
-        assert_eq!(
-            p2.piece_boards[WHITE_ROOK.0 as usize],
-            Board(0x0100_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0100_0000_0000_0001)
-        );
+        assert_eq!(p2.piece(WHITE_ROOK), Board(0x0100_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0100_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -446,16 +396,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[56], WHITE_ROOK);
-        assert_eq!(
-            p2.piece_boards[WHITE_ROOK.0 as usize],
-            Board(0x0100_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0100_0000_0000_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_ROOK), Board(0x0100_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0100_0000_0000_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -477,14 +421,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[62], WHITE_BISHOP);
-        assert_eq!(
-            p2.piece_boards[WHITE_BISHOP.0 as usize],
-            Board(0x4000_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x4000_0000_0000_0001)
-        );
+        assert_eq!(p2.piece(WHITE_BISHOP), Board(0x4000_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -506,16 +444,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[62], WHITE_BISHOP);
-        assert_eq!(
-            p2.piece_boards[WHITE_BISHOP.0 as usize],
-            Board(0x4000_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x4000_0000_0000_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_BISHOP), Board(0x4000_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -537,14 +469,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[25], WHITE_KNIGHT);
-        assert_eq!(
-            p2.piece_boards[WHITE_KNIGHT.0 as usize],
-            Board(0x0000_0000_0200_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0200_0001)
-        );
+        assert_eq!(p2.piece(WHITE_KNIGHT), Board(0x0000_0000_0200_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0200_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -566,16 +492,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[25], WHITE_KNIGHT);
-        assert_eq!(
-            p2.piece_boards[WHITE_KNIGHT.0 as usize],
-            Board(0x0000_0000_0200_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0200_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_KNIGHT), Board(0x0000_0000_0200_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0200_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -597,14 +517,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[16], WHITE_PAWN);
-        assert_eq!(
-            p2.piece_boards[WHITE_PAWN.0 as usize],
-            Board(0x0000_0000_0001_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0001_0001)
-        );
+        assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0000_0001_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0001_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -626,14 +540,8 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[24], WHITE_PAWN);
-        assert_eq!(
-            p2.piece_boards[WHITE_PAWN.0 as usize],
-            Board(0x0000_0000_0100_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0100_0001)
-        );
+        assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0000_0100_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0100_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, Some(Square(16)));
@@ -655,15 +563,9 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
         assert_eq!(p2.pieces[56], WHITE_QUEEN);
-        assert_eq!(p2.piece_boards[WHITE_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(
-            p2.piece_boards[WHITE_QUEEN.0 as usize],
-            Board(0x0100_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0100_0000_0000_0001)
-        );
+        assert_eq!(p2.piece(WHITE_PAWN), Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_QUEEN), Board(0x0100_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0100_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -685,16 +587,10 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[8], NULL_PIECE);
         assert_eq!(p2.pieces[17], WHITE_PAWN);
-        assert_eq!(
-            p2.piece_boards[WHITE_PAWN.0 as usize],
-            Board(0x0000_0000_0002_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0000_0002_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0000_0002_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0000_0002_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -716,15 +612,9 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
         assert_eq!(p2.pieces[57], WHITE_QUEEN);
-        assert_eq!(p2.piece_boards[WHITE_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(
-            p2.piece_boards[WHITE_QUEEN.0 as usize],
-            Board(0x0200_0000_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0200_0000_0000_0001)
-        );
+        assert_eq!(p2.piece(WHITE_PAWN), Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_QUEEN), Board(0x0200_0000_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0200_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -747,16 +637,10 @@ mod tests {
         assert_eq!(p2.pieces[32], NULL_PIECE);
         assert_eq!(p2.pieces[40], NULL_PIECE);
         assert_eq!(p2.pieces[41], WHITE_PAWN);
-        assert_eq!(
-            p2.piece_boards[WHITE_PAWN.0 as usize],
-            Board(0x0000_0200_0000_0000)
-        );
-        assert_eq!(
-            p2.side_boards[WHITE.0 as usize],
-            Board(0x0000_0200_0000_0001)
-        );
-        assert_eq!(p2.piece_boards[BLACK_PAWN.0 as usize], Board::EMPTY);
-        assert_eq!(p2.side_boards[BLACK.0 as usize], Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0200_0000_0000));
+        assert_eq!(p2.side(WHITE), Board(0x0000_0200_0000_0001));
+        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
+        assert_eq!(p2.side(BLACK), Board::EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);

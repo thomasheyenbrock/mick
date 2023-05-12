@@ -3,8 +3,13 @@ mod legal_moves;
 mod r#move;
 
 use crate::{
-    board::Board, castle::CastlingRights, hash::DEFAULT_ZOBRISH_HASH, piece::Piece, side::Side,
-    square::Square, utils::grid_to_string_with_props,
+    board::Board,
+    castle::CastlingRights,
+    hash::DEFAULT_ZOBRISH_HASH,
+    piece::Piece,
+    side::{Side, BLACK, WHITE},
+    square::Square,
+    utils::grid_to_string_with_props,
 };
 use std::fmt::Display;
 
@@ -29,6 +34,10 @@ pub struct Position {
 impl Position {
     pub fn at(&self, sq: Square) -> Piece {
         unsafe { return *self.pieces.get_unchecked(sq.0 as usize) }
+    }
+
+    pub fn empty(&self) -> Board {
+        !self.occupied()
     }
 
     pub fn new(
@@ -62,6 +71,18 @@ impl Position {
             state,
             hash,
         }
+    }
+
+    pub fn occupied(&self) -> Board {
+        self.side(WHITE) | self.side(BLACK)
+    }
+
+    pub fn piece(&self, pc: Piece) -> Board {
+        unsafe { return *self.piece_boards.get_unchecked(pc.0 as usize) }
+    }
+
+    pub fn side(&self, side: Side) -> Board {
+        unsafe { return *self.side_boards.get_unchecked(side.0 as usize & 1) }
     }
 }
 

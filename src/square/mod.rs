@@ -37,20 +37,20 @@ impl Square {
         Square((self.0 & 56) | (other.0 & 7))
     }
 
-    pub fn between(&self, rhs: &Self) -> Board {
+    pub fn between(self, rhs: Self) -> Board {
         SQUARES_BETWEEN[self.0 as usize][rhs.0 as usize]
     }
 
-    pub fn diagonal_rays(&self) -> Board {
+    pub fn diagonal_rays(self) -> Board {
         DIAGONAL_RAYS[self.0 as usize]
     }
 
-    pub fn file(&self) -> Board {
-        FILES[self.0 as usize]
+    pub fn file_index(self) -> u8 {
+        self.0 & 7
     }
 
-    pub fn file_index(&self) -> u8 {
-        self.0 & 7
+    pub fn file_mask(self) -> Board {
+        FILES[self.0 as usize]
     }
 
     pub fn from(rank: u8, file: u8) -> Square {
@@ -65,19 +65,23 @@ impl Square {
         unsafe { *KNIGHT_MOVES.get_unchecked(self.0 as usize) }
     }
 
-    pub fn lines_along(&self, rhs: &Self) -> Board {
+    pub fn lines_along(self, rhs: Self) -> Board {
         LINES_ALONG[self.0 as usize][rhs.0 as usize]
     }
 
-    pub fn rank_index(&self) -> usize {
+    pub fn rank_index(self) -> usize {
         self.0.div_floor(8) as usize
     }
 
-    pub fn straight_rays(&self) -> Board {
+    pub fn rotate_right(self, amount: u8) -> Square {
+        Square((self.0 + (64 - amount)) & 63)
+    }
+
+    pub fn straight_rays(self) -> Board {
         STRAIGHT_RAYS[self.0 as usize]
     }
 
-    pub fn to_board(&self) -> Board {
+    pub fn to_board(self) -> Board {
         Board(1 << self.0)
     }
 

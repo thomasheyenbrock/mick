@@ -30,6 +30,10 @@ pub const PAWN: PieceKind = PieceKind(5);
 pub struct Piece(pub u8);
 
 impl Piece {
+    pub fn is_slider(&self) -> bool {
+        self.0 <= 7 && self.0 >= 2
+    }
+
     pub fn is_some(&self) -> bool {
         *self != NULL_PIECE
     }

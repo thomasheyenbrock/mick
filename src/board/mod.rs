@@ -20,6 +20,12 @@ pub const FILE_H: Board = Board(FILE_A.0 << 7);
 pub const NOT_FILE_A: Board = Board(!FILE_A.0);
 pub const NOT_FILE_H: Board = Board(!FILE_H.0);
 
+pub const RANK_1: Board = Board(0x0000_0000_0000_00FF);
+pub const RANK_4: Board = Board(RANK_1.0 << (3 * 8));
+pub const RANK_5: Board = Board(RANK_1.0 << (4 * 8));
+pub const RANK_8: Board = Board(RANK_1.0 << (7 * 8));
+pub const END_RANKS: Board = Board(RANK_1.0 | RANK_8.0);
+
 impl Board {
     pub const EMPTY: Self = Self(0);
     pub const ALL: Self = Self(0xFFFF_FFFF_FFFF_FFFF);
@@ -41,6 +47,10 @@ impl Board {
     pub const WHITE_QUEENSIDE_SAFE: Self = Self(0x0000_0000_0000_001C);
     pub const BLACK_KINGSIDE_SAFE: Self = Self(0x7000_0000_0000_0000);
     pub const BLACK_QUEENSIDE_SAFE: Self = Self(0x1C00_0000_0000_0000);
+
+    pub fn any(self) -> bool {
+        self.0 != 0
+    }
 
     pub fn flip_board(&mut self, board: &Self) {
         self.0 ^= board.0
@@ -70,12 +80,16 @@ impl Board {
         Board(1u64 << square.0)
     }
 
-    pub fn occupied(&self) -> u8 {
-        self.0.count_ones() as u8
+    pub fn occupied(&self) -> u32 {
+        self.0.count_ones()
     }
 
-    pub fn rotate_left(&self, n: u32) -> Self {
-        Self(self.0.rotate_left(n))
+    pub fn rotate_left(self, amount: u32) -> Board {
+        Board(self.0.rotate_left(amount))
+    }
+
+    pub fn rotate_right(self, amount: u32) -> Board {
+        Board(self.0.rotate_right(amount))
     }
 
     pub fn pawn_attacks(&self, side_to_move: &Side) -> Self {
@@ -254,73 +268,6 @@ pub static FILES: [Board; 64] = [
     Board(0x2020_2020_2020_2020), // f8
     Board(0x4040_4040_4040_4040), // g8
     Board(0x8080_8080_8080_8080), // h8
-];
-
-pub static RANKS: [Board; 64] = [
-    Board(0x0000_0000_0000_00FF), // a1
-    Board(0x0000_0000_0000_00FF), // b1
-    Board(0x0000_0000_0000_00FF), // c1
-    Board(0x0000_0000_0000_00FF), // d1
-    Board(0x0000_0000_0000_00FF), // e1
-    Board(0x0000_0000_0000_00FF), // f1
-    Board(0x0000_0000_0000_00FF), // g1
-    Board(0x0000_0000_0000_00FF), // h1
-    Board(0x0000_0000_0000_FF00), // a2
-    Board(0x0000_0000_0000_FF00), // b2
-    Board(0x0000_0000_0000_FF00), // c2
-    Board(0x0000_0000_0000_FF00), // d2
-    Board(0x0000_0000_0000_FF00), // e2
-    Board(0x0000_0000_0000_FF00), // f2
-    Board(0x0000_0000_0000_FF00), // g2
-    Board(0x0000_0000_0000_FF00), // h2
-    Board(0x0000_0000_00FF_0000), // a3
-    Board(0x0000_0000_00FF_0000), // b3
-    Board(0x0000_0000_00FF_0000), // c3
-    Board(0x0000_0000_00FF_0000), // d3
-    Board(0x0000_0000_00FF_0000), // e3
-    Board(0x0000_0000_00FF_0000), // f3
-    Board(0x0000_0000_00FF_0000), // g3
-    Board(0x0000_0000_00FF_0000), // h3
-    Board(0x0000_0000_FF00_0000), // a4
-    Board(0x0000_0000_FF00_0000), // b4
-    Board(0x0000_0000_FF00_0000), // c4
-    Board(0x0000_0000_FF00_0000), // d4
-    Board(0x0000_0000_FF00_0000), // e4
-    Board(0x0000_0000_FF00_0000), // f4
-    Board(0x0000_0000_FF00_0000), // g4
-    Board(0x0000_0000_FF00_0000), // h4
-    Board(0x0000_00FF_0000_0000), // a5
-    Board(0x0000_00FF_0000_0000), // b5
-    Board(0x0000_00FF_0000_0000), // c5
-    Board(0x0000_00FF_0000_0000), // d5
-    Board(0x0000_00FF_0000_0000), // e5
-    Board(0x0000_00FF_0000_0000), // f5
-    Board(0x0000_00FF_0000_0000), // g5
-    Board(0x0000_00FF_0000_0000), // h5
-    Board(0x0000_FF00_0000_0000), // a6
-    Board(0x0000_FF00_0000_0000), // b6
-    Board(0x0000_FF00_0000_0000), // c6
-    Board(0x0000_FF00_0000_0000), // d6
-    Board(0x0000_FF00_0000_0000), // e6
-    Board(0x0000_FF00_0000_0000), // f6
-    Board(0x0000_FF00_0000_0000), // g6
-    Board(0x0000_FF00_0000_0000), // h6
-    Board(0x00FF_0000_0000_0000), // a7
-    Board(0x00FF_0000_0000_0000), // b7
-    Board(0x00FF_0000_0000_0000), // c7
-    Board(0x00FF_0000_0000_0000), // d7
-    Board(0x00FF_0000_0000_0000), // e7
-    Board(0x00FF_0000_0000_0000), // f7
-    Board(0x00FF_0000_0000_0000), // g7
-    Board(0x00FF_0000_0000_0000), // h7
-    Board(0xFF00_0000_0000_0000), // a8
-    Board(0xFF00_0000_0000_0000), // b8
-    Board(0xFF00_0000_0000_0000), // c8
-    Board(0xFF00_0000_0000_0000), // d8
-    Board(0xFF00_0000_0000_0000), // e8
-    Board(0xFF00_0000_0000_0000), // f8
-    Board(0xFF00_0000_0000_0000), // g8
-    Board(0xFF00_0000_0000_0000), // h8
 ];
 
 #[cfg(test)]

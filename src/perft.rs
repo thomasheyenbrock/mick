@@ -1,20 +1,19 @@
-use crate::position::Position;
+use crate::{
+    move_list::{move_counter::MoveCounter, move_vec::MoveVec},
+    position::Position,
+};
 
 const DEBUG_DEPTH: u8 = 0;
 
-pub fn perft(position: &mut Position, depth: u8) -> usize {
-    let moves = position.legal_moves();
-
+pub fn perft(position: &mut Position, depth: u8) -> u64 {
     if depth == 1 {
-        if DEBUG_DEPTH == 1 {
-            for m in moves.iter() {
-                println!("{m}: 1")
-            }
-        }
-        moves.len()
+        let mut list = MoveCounter::new();
+        position.legal_moves(&mut list);
+        list.moves
     } else {
-        moves
-            .iter()
+        let mut list = MoveVec::new();
+        position.legal_moves(&mut list);
+        list.iter()
             .map(|m| {
                 let mut position = position.clone();
                 position.make(*m);
