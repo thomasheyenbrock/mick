@@ -15,7 +15,6 @@ mod utils;
 
 extern crate clap;
 extern crate num_cpus;
-extern crate rand;
 #[cfg(test)]
 extern crate test;
 extern crate threadpool;
@@ -23,18 +22,12 @@ extern crate threadpool;
 use clap::{Parser, Subcommand};
 pub use perft::perft;
 pub use position::{Position, STARTING_POSITION_FEN};
-use rand::RngCore;
 use std::time::Instant;
 
 #[derive(Subcommand)]
 enum Commands {
     /// Run perft on the starting board position
     Perft,
-    /// Create and print a set of numbers for Zorbist hashing
-    Zorbist {
-        #[arg(default_value_t = 0)]
-        seed: u64,
-    },
 }
 
 #[derive(Parser)]
@@ -68,22 +61,6 @@ fn main() {
                 "Done. Total moves: {} ({:5} seconds, {:0} NPS)",
                 move_count, sec, nps
             );
-        }
-        Some(Commands::Zorbist { seed }) => {
-            use rand::rngs::SmallRng;
-            use rand::SeedableRng;
-
-            let mut small_rng = SmallRng::seed_from_u64(seed);
-
-            let pieces = 12;
-            let sides = 1; // Only one used when it's blacks turn
-            let castle_rights = 2u32.pow(4);
-            let files = 8; // Used to indicate the en-passant target
-            let n = pieces + castle_rights + files + sides;
-
-            for _ in 0..n {
-                println!("{}", small_rng.next_u64());
-            }
         }
         _ => todo!("not implemented"),
     }
