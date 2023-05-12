@@ -4,14 +4,14 @@ mod r#move;
 use crate::{
     board::{Board, RANKS},
     castle::{
-        Castle, CastlingRights, BLACK_KING_SIDE, BLACK_QUEEN_SIDE, KING_SIDE, NO_RIGHTS,
-        QUEEN_SIDE, WHITE_KING_SIDE, WHITE_QUEEN_SIDE,
+        Castle, CastlingRights, BLACK_KING_SIDE, BLACK_QUEEN_SIDE, KING_SIDE, QUEEN_SIDE,
+        WHITE_KING_SIDE, WHITE_QUEEN_SIDE,
     },
     hash::DEFAULT_ZOBRISH_HASH,
     piece::{Piece, BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     r#move::Move,
     side::{Side, WHITE},
-    square::Square,
+    square::{Square, C1, C8, G1, G8},
     utils::grid_to_string_with_props,
 };
 use std::fmt::Display;
@@ -423,14 +423,14 @@ pub static CASTLE_BY_SIDE: [[(Castle, CastlingRights, Square, Board, Board); 2];
         (
             KING_SIDE,
             WHITE_KING_SIDE,
-            Square::WHITE_KINGSIDE_TARGET,
+            G1,
             Board::WHITE_KINGSIDE_BLOCKING,
             Board::WHITE_KINGSIDE_SAFE,
         ),
         (
             QUEEN_SIDE,
             WHITE_QUEEN_SIDE,
-            Square::WHITE_QUEENSIDE_TARGET,
+            C1,
             Board::WHITE_QUEENSIDE_BLOCKING,
             Board::WHITE_QUEENSIDE_SAFE,
         ),
@@ -439,14 +439,14 @@ pub static CASTLE_BY_SIDE: [[(Castle, CastlingRights, Square, Board, Board); 2];
         (
             KING_SIDE,
             BLACK_KING_SIDE,
-            Square::BLACK_KINGSIDE_TARGET,
+            G8,
             Board::BLACK_KINGSIDE_BLOCKING,
             Board::BLACK_KINGSIDE_SAFE,
         ),
         (
             QUEEN_SIDE,
             BLACK_QUEEN_SIDE,
-            Square::BLACK_QUEENSIDE_TARGET,
+            C8,
             Board::BLACK_QUEENSIDE_BLOCKING,
             Board::BLACK_QUEENSIDE_SAFE,
         ),

@@ -1,8 +1,10 @@
+mod consts;
+
+use self::consts::{DIAGONAL_RAYS, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS};
+use crate::board::{Board, FILES};
 use std::fmt::Display;
 
-use crate::board::{Board, DIAGONAL_RAYS, FILES, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS};
-
-static SQUARES: [&str; 64] = [
+static NAMES: [&str; 64] = [
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
     "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
     "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
@@ -28,11 +30,6 @@ pub const G8: Square = Square(62);
 pub const H8: Square = Square(63);
 
 impl Square {
-    pub const WHITE_KINGSIDE_TARGET: Self = Self(6);
-    pub const WHITE_QUEENSIDE_TARGET: Self = Self(2);
-    pub const BLACK_KINGSIDE_TARGET: Self = Self(62);
-    pub const BLACK_QUEENSIDE_TARGET: Self = Self(58);
-
     pub fn along_row_with_col(self, other: Square) -> Square {
         Square((self.0 & 56) | (other.0 & 7))
     }
@@ -74,19 +71,19 @@ impl Square {
     }
 
     pub fn try_from_str(s: &str) -> Result<Self, String> {
-        for (i, square) in SQUARES.iter().enumerate() {
+        for (i, square) in NAMES.iter().enumerate() {
             if s == *square {
                 return Ok(Self(i as u8));
             }
         }
 
-        Err(format!("Invalid square {s}"))
+        Err(format!("Invalid square: {s}"))
     }
 }
 
 impl Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", SQUARES[self.0 as usize])
+        write!(f, "{}", NAMES[self.0 as usize])
     }
 }
 
@@ -108,19 +105,19 @@ mod tests {
     fn try_from_invalid() {
         assert_eq!(
             Square::try_from_str(""),
-            Err(String::from("Invalid square "))
+            Err(String::from("Invalid square: "))
         );
         assert_eq!(
             Square::try_from_str("-"),
-            Err(String::from("Invalid square -"))
+            Err(String::from("Invalid square: -"))
         );
         assert_eq!(
             Square::try_from_str("a9"),
-            Err(String::from("Invalid square a9"))
+            Err(String::from("Invalid square: a9"))
         );
         assert_eq!(
             Square::try_from_str("i1"),
-            Err(String::from("Invalid square i1"))
+            Err(String::from("Invalid square: i1"))
         );
     }
 }
