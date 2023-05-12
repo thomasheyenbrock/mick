@@ -1,10 +1,3 @@
-// TODO: refactor square
-// TODO: refactor castle
-// TODO: refactor zorbist -> hash
-// TODO: refactor board
-// TODO: refactor fen
-// TODO: refactor move
-// TODO: add move list
 #![feature(int_roundings)]
 
 mod board;
