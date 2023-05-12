@@ -1,6 +1,6 @@
 use super::{Position, State};
 use crate::{
-    board::Board,
+    board::{Board, EMPTY},
     castle::{Castle, CastlingRights},
     hash::DEFAULT_ZOBRISH_HASH,
     piece::{Piece, NULL_PIECE, PAWN},
@@ -76,7 +76,7 @@ impl Position {
             xor_key ^= DEFAULT_ZOBRISH_HASH.push(mover, from, updated_mover, to);
 
             for (i, mask) in CASTLE_MASKS.iter().enumerate() {
-                if (move_mask & *mask) != Board::EMPTY {
+                if (move_mask & *mask) != EMPTY {
                     self.state.castling_rights.clear(CastlingRights(1 << i));
                 }
             }
@@ -202,7 +202,7 @@ pub fn castle_squares(side: Side, castle: Castle) -> (Square, Square, Square, Sq
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::Board,
+        board::{Board, EMPTY},
         castle::{KING_SIDE, NO_RIGHTS, QUEEN_SIDE, WHITE_KING_SIDE, WHITE_QUEEN_SIDE},
         piece::{
             BLACK_PAWN, NULL_PIECE, QUEEN, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN,
@@ -250,8 +250,8 @@ mod tests {
         assert_eq!(p2.pieces[8], WHITE_KING);
         assert_eq!(p2.piece(WHITE_KING), Board(0x0000_0000_0000_0100));
         assert_eq!(p2.side(WHITE), Board(0x0000_0000_0000_0100));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -350,8 +350,8 @@ mod tests {
         assert_eq!(p2.pieces[62], WHITE_QUEEN);
         assert_eq!(p2.piece(WHITE_QUEEN), Board(0x4000_0000_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -398,8 +398,8 @@ mod tests {
         assert_eq!(p2.pieces[56], WHITE_ROOK);
         assert_eq!(p2.piece(WHITE_ROOK), Board(0x0100_0000_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x0100_0000_0000_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -446,8 +446,8 @@ mod tests {
         assert_eq!(p2.pieces[62], WHITE_BISHOP);
         assert_eq!(p2.piece(WHITE_BISHOP), Board(0x4000_0000_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x4000_0000_0000_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -494,8 +494,8 @@ mod tests {
         assert_eq!(p2.pieces[25], WHITE_KNIGHT);
         assert_eq!(p2.piece(WHITE_KNIGHT), Board(0x0000_0000_0200_0000));
         assert_eq!(p2.side(WHITE), Board(0x0000_0000_0200_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -563,7 +563,7 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
         assert_eq!(p2.pieces[56], WHITE_QUEEN);
-        assert_eq!(p2.piece(WHITE_PAWN), Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_PAWN), EMPTY);
         assert_eq!(p2.piece(WHITE_QUEEN), Board(0x0100_0000_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x0100_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
@@ -589,8 +589,8 @@ mod tests {
         assert_eq!(p2.pieces[17], WHITE_PAWN);
         assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0000_0002_0000));
         assert_eq!(p2.side(WHITE), Board(0x0000_0000_0002_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);
@@ -612,7 +612,7 @@ mod tests {
         let capture = p2.make(m);
         assert_eq!(p2.pieces[48], NULL_PIECE);
         assert_eq!(p2.pieces[57], WHITE_QUEEN);
-        assert_eq!(p2.piece(WHITE_PAWN), Board::EMPTY);
+        assert_eq!(p2.piece(WHITE_PAWN), EMPTY);
         assert_eq!(p2.piece(WHITE_QUEEN), Board(0x0200_0000_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x0200_0000_0000_0001));
         assert_eq!(p2.state.side_to_move, BLACK);
@@ -639,8 +639,8 @@ mod tests {
         assert_eq!(p2.pieces[41], WHITE_PAWN);
         assert_eq!(p2.piece(WHITE_PAWN), Board(0x0000_0200_0000_0000));
         assert_eq!(p2.side(WHITE), Board(0x0000_0200_0000_0001));
-        assert_eq!(p2.piece(BLACK_PAWN), Board::EMPTY);
-        assert_eq!(p2.side(BLACK), Board::EMPTY);
+        assert_eq!(p2.piece(BLACK_PAWN), EMPTY);
+        assert_eq!(p2.side(BLACK), EMPTY);
         assert_eq!(p2.state.side_to_move, BLACK);
         assert_eq!(p2.state.castling_rights, NO_RIGHTS);
         assert_eq!(p2.state.en_passant_target, None);

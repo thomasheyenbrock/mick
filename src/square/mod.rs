@@ -69,20 +69,12 @@ impl Square {
         LINES_ALONG[self.0 as usize][rhs.0 as usize]
     }
 
-    pub fn rank_index(self) -> usize {
-        self.0.div_floor(8) as usize
-    }
-
     pub fn rotate_right(self, amount: u8) -> Square {
         Square((self.0 + (64 - amount)) & 63)
     }
 
     pub fn straight_rays(self) -> Board {
         STRAIGHT_RAYS[self.0 as usize]
-    }
-
-    pub fn to_board(self) -> Board {
-        Board(1 << self.0)
     }
 
     pub fn try_from_str(s: &str) -> Result<Self, String> {

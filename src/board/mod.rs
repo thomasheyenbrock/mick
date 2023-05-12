@@ -1,10 +1,6 @@
 mod attacks;
 
-use crate::{
-    side::{Side, WHITE},
-    square::Square,
-    utils::grid_to_string,
-};
+use crate::{square::Square, utils::grid_to_string};
 use std::{
     fmt::Display,
     ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, Shr},
@@ -12,6 +8,8 @@ use std::{
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Board(pub u64);
+
+pub const EMPTY: Board = Board(0x0000_0000_0000_0000);
 
 pub const FILE_A: Board = Board(0x0101_0101_0101_0101);
 pub const FILE_B: Board = Board(FILE_A.0 << 1);
@@ -27,27 +25,6 @@ pub const RANK_8: Board = Board(RANK_1.0 << (7 * 8));
 pub const END_RANKS: Board = Board(RANK_1.0 | RANK_8.0);
 
 impl Board {
-    pub const EMPTY: Self = Self(0);
-    pub const ALL: Self = Self(0xFFFF_FFFF_FFFF_FFFF);
-
-    const FILE_A: Self = Self(0x0101_0101_0101_0101);
-    const FILE_B: Self = Self(0x0202_0202_0202_0202);
-    const FILE_G: Self = Self(0x4040_4040_4040_4040);
-    const FILE_H: Self = Self(0x8080_8080_8080_8080);
-
-    const NOT_FILE_A: Self = Self(0xFEFE_FEFE_FEFE_FEFE);
-    const NOT_FILE_H: Self = Self(0x7F7F_7F7F_7F7F_7F7F);
-
-    pub const WHITE_KINGSIDE_BLOCKING: Self = Self(0x0000_0000_0000_0060);
-    pub const WHITE_QUEENSIDE_BLOCKING: Self = Self(0x0000_0000_0000_000E);
-    pub const BLACK_KINGSIDE_BLOCKING: Self = Self(0x6000_0000_0000_0000);
-    pub const BLACK_QUEENSIDE_BLOCKING: Self = Self(0x0E00_0000_0000_0000);
-
-    pub const WHITE_KINGSIDE_SAFE: Self = Self(0x0000_0000_0000_0070);
-    pub const WHITE_QUEENSIDE_SAFE: Self = Self(0x0000_0000_0000_001C);
-    pub const BLACK_KINGSIDE_SAFE: Self = Self(0x7000_0000_0000_0000);
-    pub const BLACK_QUEENSIDE_SAFE: Self = Self(0x1C00_0000_0000_0000);
-
     pub fn any(self) -> bool {
         self.0 != 0
     }
@@ -60,20 +37,8 @@ impl Board {
         self.0 ^= 1 << square.0
     }
 
-    pub fn has(&self, square: &Square) -> bool {
-        self.0 & (1 << square.0) != 0
-    }
-
     pub fn iter(self) -> BoardIterator {
         BoardIterator(self)
-    }
-
-    pub fn king_attacks(&self) -> Self {
-        let right = (self.0 << 1) & Self::NOT_FILE_A.0;
-        let left = (self.0 >> 1) & Self::NOT_FILE_H.0;
-        let side = right | left;
-
-        Self(side | (side << 8) | (side >> 8) | (self.0 << 8) | (self.0 >> 8))
     }
 
     pub fn new(square: Square) -> Board {
@@ -90,18 +55,6 @@ impl Board {
 
     pub fn rotate_right(self, amount: u32) -> Board {
         Board(self.0.rotate_right(amount))
-    }
-
-    pub fn pawn_attacks(&self, side_to_move: &Side) -> Self {
-        let attacks_right = (self.0 << 1) & Self::NOT_FILE_A.0;
-        let attacks_left = (self.0 >> 1) & Self::NOT_FILE_H.0;
-        let attacks = attacks_right | attacks_left;
-
-        if *side_to_move == WHITE {
-            Self(attacks << 8)
-        } else {
-            Self(attacks >> 8)
-        }
     }
 
     pub fn to_square(&self) -> Square {
@@ -192,7 +145,7 @@ impl Iterator for BoardIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         let board = self.0;
-        if board.0 == Board::EMPTY.0 {
+        if board.0 == EMPTY.0 {
             return None;
         }
 
@@ -272,7 +225,10 @@ pub static FILES: [Board; 64] = [
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, square::Square};
+    use crate::{
+        board::{Board, EMPTY},
+        square::Square,
+    };
 
     #[test]
     fn flips_board() {
@@ -287,29 +243,29 @@ mod tests {
         assert_eq!(board1, Board(0x0101_0202_0404_0808));
 
         board1.flip_board(&board3);
-        assert_eq!(board1, Board::EMPTY);
+        assert_eq!(board1, EMPTY);
     }
 
     #[test]
     fn flips_square() {
-        let mut board = Board::EMPTY;
+        let mut board = EMPTY;
         let a1 = Square(0);
 
         board.flip_square(&a1);
         assert_eq!(board, Board(0x0000_0000_0000_0001));
 
         board.flip_square(&a1);
-        assert_eq!(board, Board::EMPTY);
+        assert_eq!(board, EMPTY);
     }
 
     #[test]
     fn iterates_over_empty() {
-        assert_eq!(Board::EMPTY.iter().next(), None);
+        assert_eq!(EMPTY.iter().next(), None);
     }
 
     #[test]
     fn iterates_over_all() {
-        let mut iter = Board::ALL.iter();
+        let mut iter = (!EMPTY).iter();
         for i in 0..64 {
             assert_eq!(iter.next(), Some((Square(i), Board(1 << i))));
         }

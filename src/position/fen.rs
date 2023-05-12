@@ -1,5 +1,5 @@
 use crate::{
-    board::Board,
+    board::EMPTY,
     castle::CastlingRights,
     piece::{Piece, NULL_PIECE},
     side::Side,
@@ -16,7 +16,7 @@ impl Position {
         assert!(parts.len() == 6, "Invalid FEN {fen}");
 
         let mut pieces = [NULL_PIECE; 64];
-        let mut piece_boards = [Board::EMPTY; 12];
+        let mut piece_boards = [EMPTY; 12];
         for (rank_index, rank) in parts[0].split("/").enumerate() {
             let mut file_index = 0;
             for char in rank.chars() {

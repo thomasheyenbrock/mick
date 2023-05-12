@@ -3,7 +3,7 @@ mod legal_moves;
 mod r#move;
 
 use crate::{
-    board::Board,
+    board::{Board, EMPTY},
     castle::CastlingRights,
     hash::DEFAULT_ZOBRISH_HASH,
     piece::Piece,
@@ -49,7 +49,7 @@ impl Position {
         halfmove_clock: u32,
         fullmove_number: u32,
     ) -> Self {
-        let mut side_boards = [Board::EMPTY; 2];
+        let mut side_boards = [EMPTY; 2];
         for (i, board) in piece_boards.iter().enumerate() {
             side_boards[i % 2].flip_board(board);
         }

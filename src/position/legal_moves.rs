@@ -1,6 +1,6 @@
 use super::Position;
 use crate::{
-    board::{Board, NOT_FILE_A, NOT_FILE_H, RANK_4, RANK_5},
+    board::{Board, EMPTY, NOT_FILE_A, NOT_FILE_H, RANK_4, RANK_5},
     castle::{KING_SIDE, QUEEN_SIDE},
     move_list::MoveAdder,
     piece::{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
@@ -27,9 +27,9 @@ impl Position {
         let straight_attackers = opponent_queens | opponent_rooks;
         let diagonal_attackers = opponent_queens | opponent_bishops;
 
-        let mut checkers = Board::EMPTY;
-        let mut pinned = Board::EMPTY;
-        let mut pinners = Board::EMPTY;
+        let mut checkers = EMPTY;
+        let mut pinned = EMPTY;
+        let mut pinners = EMPTY;
 
         // Pawns and Knights can only be checkers, not pinners
         checkers |= king_sq.knight_moves() & opponent_knights;
@@ -48,7 +48,7 @@ impl Position {
 
             // If there are no friendly pieces between the attacker and the king
             // then the attacker is giving check
-            if potentially_pinned == Board::EMPTY {
+            if potentially_pinned == EMPTY {
                 checkers |= bb;
             // If there is a friendly piece between the attacker and the king
             // then it is pinned
@@ -99,7 +99,7 @@ impl Position {
                 } else {
                     // If we are in check by a jumping piece (aka a knight) then
                     // there are no valid non-captures to avoid check
-                    push_mask = Board::EMPTY;
+                    push_mask = EMPTY;
                 }
             }
             _ => {
@@ -175,7 +175,7 @@ impl Position {
 
         let king_sq = self.piece(KING.to_piece(side)).to_square();
 
-        king_sq.straight_attacks(occupied) & straight_attackers != Board::EMPTY
+        king_sq.straight_attacks(occupied) & straight_attackers != EMPTY
     }
 
     fn king_moves<L: MoveAdder>(&self, capture_mask: Board, push_mask: Board, list: &mut L) {
@@ -223,11 +223,11 @@ impl Position {
         let piece = PAWN.to_piece(side_to_move);
         let movers = self.piece(piece) & from_mask;
 
-        if movers == Board::EMPTY {
+        if movers == EMPTY {
             return;
         }
 
-        if capture_mask != Board::EMPTY {
+        if capture_mask != EMPTY {
             // CAPTURES
             for &(shift, file_mask) in PAWN_CAPTURE_FILE_MASKS[side_to_move.0 as usize].iter() {
                 let targets = movers.rotate_left(shift as u32) & file_mask & capture_mask;
@@ -279,7 +279,7 @@ impl Position {
         let movers = self.piece(piece) & pinned;
 
         // exit early if no pinned pawns
-        if movers == Board::EMPTY {
+        if movers == EMPTY {
             return;
         }
 
@@ -339,7 +339,7 @@ impl Position {
         let piece = PAWN.to_piece(side_to_move);
         let movers = self.piece(piece) & from_mask;
 
-        if movers == Board::EMPTY {
+        if movers == EMPTY {
             return;
         }
 
