@@ -84,24 +84,24 @@ impl Square {
         }
 
         if s.len() < 2 {
-            return Err("String too short".to_string());
+            return Err(format!("Invalid square: {}", s));
         }
 
-        let col_char = s.chars().next().unwrap() as usize;
-        let row_char = s.chars().nth(1).unwrap() as usize;
+        let file_char = s.chars().next().unwrap() as usize;
+        let rank_char = s.chars().nth(1).unwrap() as usize;
 
-        let col = col_char - 'a' as usize;
-        let row = row_char - '1' as usize;
+        let file = file_char - 'a' as usize;
+        let rank = rank_char - '1' as usize;
 
-        if col > 7 {
-            return Err(format!("Bad column identifier: {}", col_char));
+        if file > 7 {
+            return Err(format!("Invalid file: {}", s));
         }
 
-        if row > 7 {
-            return Err(format!("Bad row identifier: {}", row_char));
+        if rank > 7 {
+            return Err(format!("Invalid rank: {}", s));
         }
 
-        Ok(Some(Square::from(row as u8, col as u8)))
+        Ok(Some(Square::from(rank as u8, file as u8)))
     }
 }
 
@@ -130,6 +130,7 @@ mod tests {
         assert_eq!(Square::try_from_str("d4"), Ok(Some(Square(27))));
         assert_eq!(Square::try_from_str("a8"), Ok(Some(Square(56))));
         assert_eq!(Square::try_from_str("h8"), Ok(Some(Square(63))));
+        assert_eq!(Square::try_from_str("-"), Ok(None));
     }
 
     #[test]
@@ -139,16 +140,12 @@ mod tests {
             Err(String::from("Invalid square: "))
         );
         assert_eq!(
-            Square::try_from_str("-"),
-            Err(String::from("Invalid square: -"))
-        );
-        assert_eq!(
             Square::try_from_str("a9"),
-            Err(String::from("Invalid square: a9"))
+            Err(String::from("Invalid rank: a9"))
         );
         assert_eq!(
             Square::try_from_str("i1"),
-            Err(String::from("Invalid square: i1"))
+            Err(String::from("Invalid file: i1"))
         );
     }
 }
