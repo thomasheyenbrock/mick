@@ -122,12 +122,7 @@ fn perft_with_cache_inner(position: &mut Position, depth: usize, cache: &mut Cac
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        move_list::move_vec::MoveVec,
-        perft::perft,
-        position::{Position, STARTING_POSITION_FEN},
-    };
-    use test::Bencher;
+    use crate::{move_list::move_vec::MoveVec, perft, Position, STARTING_POSITION_FEN};
 
     #[test]
     fn p() {
@@ -148,7 +143,7 @@ mod test {
     }
 
     #[bench]
-    fn l(b: &mut Bencher) {
+    fn l(b: &mut test::Bencher) {
         let position = Position::from_fen(STARTING_POSITION_FEN);
         b.iter(|| {
             for _ in 0..1000 {
