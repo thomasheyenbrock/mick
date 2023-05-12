@@ -54,8 +54,8 @@ impl Board {
         self.0 & (1 << square.0) != 0
     }
 
-    pub fn iter(&self) -> BoardIterator {
-        BoardIterator(self.0)
+    pub fn iter(self) -> BoardIterator {
+        BoardIterator(self)
     }
 
     pub fn king_attacks(&self) -> Self {
@@ -171,20 +171,21 @@ impl Shl<u8> for Board {
     }
 }
 
-pub struct BoardIterator(u64);
+pub struct BoardIterator(Board);
 
 impl Iterator for BoardIterator {
-    type Item = (Board, Square);
+    type Item = (Square, Board);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.0 == 0 {
+        let board = self.0;
+        if board.0 == Board::EMPTY.0 {
             return None;
         }
 
-        let trailing = self.0.trailing_zeros() as u8;
-        let board = 1 << trailing;
-        self.0 ^= board;
-        Some((Board(board), Square(trailing)))
+        let sq = board.to_square();
+        let lsb = Board(board.0 & 0u64.wrapping_sub(board.0));
+        self.0 ^= lsb;
+        Some((sq, lsb))
     }
 }
 
@@ -363,7 +364,7 @@ mod tests {
     fn iterates_over_all() {
         let mut iter = Board::ALL.iter();
         for i in 0..64 {
-            assert_eq!(iter.next(), Some((Board(1 << i), Square(i))));
+            assert_eq!(iter.next(), Some((Square(i), Board(1 << i))));
         }
         assert_eq!(iter.next(), None);
     }
@@ -371,10 +372,10 @@ mod tests {
     #[test]
     fn iterates_over_some() {
         let mut iter = Board(0x0001_0002_0004_0008).iter();
-        assert_eq!(iter.next(), Some((Board(1 << 3), Square(3))));
-        assert_eq!(iter.next(), Some((Board(1 << 18), Square(18))));
-        assert_eq!(iter.next(), Some((Board(1 << 33), Square(33))));
-        assert_eq!(iter.next(), Some((Board(1 << 48), Square(48))));
+        assert_eq!(iter.next(), Some((Square(3), Board(1 << 3))));
+        assert_eq!(iter.next(), Some((Square(18), Board(1 << 18))));
+        assert_eq!(iter.next(), Some((Square(33), Board(1 << 33))));
+        assert_eq!(iter.next(), Some((Square(48), Board(1 << 48))));
         assert_eq!(iter.next(), None);
     }
 
