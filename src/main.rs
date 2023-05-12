@@ -1,6 +1,11 @@
 #![feature(int_roundings)]
+#![feature(test)]
+
+#[cfg(test)]
+extern crate test;
 
 mod board;
+mod cache;
 mod castle;
 mod hash;
 mod r#move;
@@ -12,10 +17,13 @@ mod side;
 mod square;
 mod utils;
 
+use std::time::Instant;
+
 use clap::{Parser, Subcommand};
-use perft::perft;
 use position::Position;
 use rand::RngCore;
+
+use crate::{perft::perft, position::STARTING_POSITION_FEN};
 
 #[derive(Subcommand)]
 enum Commands {
@@ -41,9 +49,25 @@ fn main() {
 
     match cli.command {
         Some(Commands::Perft) => {
-            let mut p = Position::from_fen(Position::STARTING);
-            println!("{}", p);
-            println!("{}", perft(&mut p, 1));
+            let fen = STARTING_POSITION_FEN;
+            let mut position = Position::from_fen(fen);
+
+            let depth: usize = 7;
+            println!(
+                "Running performance test on starting position, depth {}",
+                depth
+            );
+            let now = Instant::now();
+            let move_count = perft(&mut position, depth, true, 1024 * 1024 * 4);
+            let elapsed = now.elapsed();
+            let sec =
+                (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1_000_000_000.0);
+            let nps = move_count as f64 / sec;
+
+            println!(
+                "Done. Total moves: {} ({:5} seconds, {:0} NPS)",
+                move_count, sec, nps
+            );
         }
         Some(Commands::Zorbist { seed }) => {
             use rand::rngs::SmallRng;

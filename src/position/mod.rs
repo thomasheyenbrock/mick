@@ -2,6 +2,7 @@ mod fen;
 mod legal_moves;
 mod r#move;
 
+pub use self::fen::STARTING_POSITION_FEN;
 use crate::{
     board::{Board, EMPTY},
     castle::CastlingRights,
@@ -40,6 +41,10 @@ impl Position {
         !self.occupied()
     }
 
+    pub fn hash(&self) -> u64 {
+        self.hash
+    }
+
     pub fn new(pieces: [Piece; 64], state: State) -> Position {
         let mut piece_boards = [EMPTY; 12];
         let mut side_boards = [EMPTY; 2];
@@ -71,6 +76,10 @@ impl Position {
 
     pub fn side(&self, side: Side) -> Board {
         unsafe { return *self.side_boards.get_unchecked(side.0 as usize & 1) }
+    }
+
+    pub fn state(&self) -> &State {
+        &self.state
     }
 }
 

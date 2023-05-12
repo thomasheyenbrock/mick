@@ -17,11 +17,16 @@ impl Display for Castle {
 pub struct CastlingRights(pub u8);
 
 pub const NO_RIGHTS: CastlingRights = CastlingRights(0);
+#[cfg(test)]
 pub const ALL_RIGHTS: CastlingRights = CastlingRights(0b1111);
 pub const WHITE_RIGHTS: CastlingRights = CastlingRights(0b0011);
+#[cfg(test)]
 pub const WHITE_KING_SIDE: CastlingRights = CastlingRights(0b0001);
+#[cfg(test)]
 pub const WHITE_QUEEN_SIDE: CastlingRights = CastlingRights(0b0010);
+#[cfg(test)]
 pub const BLACK_KING_SIDE: CastlingRights = CastlingRights(0b0100);
+#[cfg(test)]
 pub const BLACK_QUEEN_SIDE: CastlingRights = CastlingRights(0b1000);
 
 impl CastlingRights {

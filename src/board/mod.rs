@@ -35,10 +35,6 @@ impl Board {
         Board(1u64 << square.0)
     }
 
-    pub fn none(self) -> bool {
-        self.0 == 0u64
-    }
-
     pub fn occupied(self) -> u32 {
         self.0.count_ones()
     }

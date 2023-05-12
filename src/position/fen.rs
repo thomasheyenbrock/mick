@@ -7,9 +7,9 @@ use crate::{
     square::Square,
 };
 
-impl Position {
-    pub const STARTING: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+pub const STARTING_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+impl Position {
     pub fn from_fen(fen: &str) -> Self {
         let parts: Vec<&str> = fen.split(" ").collect();
         assert!(parts.len() == 6, "Invalid FEN {fen}");
@@ -115,13 +115,13 @@ mod tests {
             NULL_PIECE, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN,
             WHITE_ROOK,
         },
-        position::{Position, State},
+        position::{Position, State, STARTING_POSITION_FEN},
         side::WHITE,
     };
 
     #[test]
     fn parses_fen_starting_position() {
-        let p = Position::from_fen(Position::STARTING);
+        let p = Position::from_fen(STARTING_POSITION_FEN);
 
         assert_eq!(
             p,
