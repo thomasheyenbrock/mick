@@ -294,7 +294,7 @@ impl Position {
         let friendly_king = self.piece_boards[KING.to_piece(self.state.side_to_move).0 as usize];
 
         let occupied = self.side_boards[0] | self.side_boards[1];
-        let empty_squares = !(self.side_boards[0] | self.side_boards[1]) ^ friendly_king;
+        let occupied_without_king = occupied ^ friendly_king;
         let opponent = !self.state.side_to_move;
 
         let king = self.piece_boards[KING.to_piece(opponent).0 as usize];
@@ -308,8 +308,8 @@ impl Position {
         let diagonal = queen | bishop;
 
         let attacked = king.king_attacks()
-            | straight.straight_attacks(&empty_squares)
-            | diagonal.diagonal_attacks(&empty_squares)
+            | straight.straight_attacks(occupied_without_king)
+            | diagonal.diagonal_attacks(occupied_without_king)
             | knight.knight_attacks()
             | pawn.pawn_attacks(&opponent);
 

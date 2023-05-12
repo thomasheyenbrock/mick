@@ -1,16 +1,24 @@
-use std::{
-    fmt::Display,
-    ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
-};
+mod attacks;
 
 use crate::{
     side::{Side, WHITE},
     square::Square,
     utils::grid_to_string,
 };
+use std::{
+    fmt::Display,
+    ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, Shr},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Board(pub u64);
+
+pub const FILE_A: Board = Board(0x0101_0101_0101_0101);
+pub const FILE_B: Board = Board(FILE_A.0 << 1);
+pub const FILE_G: Board = Board(FILE_A.0 << 6);
+pub const FILE_H: Board = Board(FILE_A.0 << 7);
+pub const NOT_FILE_A: Board = Board(!FILE_A.0);
+pub const NOT_FILE_H: Board = Board(!FILE_H.0);
 
 impl Board {
     pub const EMPTY: Self = Self(0);
@@ -33,26 +41,6 @@ impl Board {
     pub const WHITE_QUEENSIDE_SAFE: Self = Self(0x0000_0000_0000_001C);
     pub const BLACK_KINGSIDE_SAFE: Self = Self(0x7000_0000_0000_0000);
     pub const BLACK_QUEENSIDE_SAFE: Self = Self(0x1C00_0000_0000_0000);
-
-    pub fn diagonal_attacks(&self, empty_squares: &Self) -> Self {
-        self.north_east_attacks(empty_squares)
-            | self.north_west_attacks(empty_squares)
-            | self.south_east_attacks(empty_squares)
-            | self.south_west_attacks(empty_squares)
-    }
-
-    pub fn east_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen << 1);
-        prop &= prop << 1;
-        gen |= prop & (gen << 2);
-        prop &= prop << 2;
-        gen |= prop & (gen << 4);
-
-        Self((gen << 1) & Self::NOT_FILE_A.0)
-    }
 
     pub fn flip_board(&mut self, board: &Self) {
         self.0 ^= board.0
@@ -78,59 +66,8 @@ impl Board {
         Self(side | (side << 8) | (side >> 8) | (self.0 << 8) | (self.0 >> 8))
     }
 
-    pub fn knight_attacks(&self) -> Self {
-        let attacks_right_one = (self.0 << 1) & Self::NOT_FILE_A.0;
-        let attacks_right_two = (self.0 << 2) & !(Self::FILE_A.0 | Self::FILE_B.0);
-        let attacks_left_one = (self.0 >> 1) & Self::NOT_FILE_H.0;
-        let attacks_left_two = (self.0 >> 2) & !(Self::FILE_H.0 | Self::FILE_G.0);
-
-        let attacks_one = attacks_right_one | attacks_left_one;
-        let attacks_two = attacks_right_two | attacks_left_two;
-
-        Self((attacks_one << 16) | (attacks_one >> 16) | (attacks_two << 8) | (attacks_two >> 8))
-    }
-
     pub fn new(square: Square) -> Board {
         Board(1u64 << square.0)
-    }
-
-    pub fn north_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen << 8);
-        prop &= prop << 8;
-        gen |= prop & (gen << 16);
-        prop &= prop << 16;
-        gen |= prop & (gen << 32);
-
-        Self(gen << 8)
-    }
-
-    pub fn north_east_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen << 9);
-        prop &= prop << 9;
-        gen |= prop & (gen << 18);
-        prop &= prop << 18;
-        gen |= prop & (gen << 36);
-
-        Self((gen << 9) & Self::NOT_FILE_A.0)
-    }
-
-    pub fn north_west_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen << 7);
-        prop &= prop << 7;
-        gen |= prop & (gen << 14);
-        prop &= prop << 14;
-        gen |= prop & (gen << 28);
-
-        Self((gen << 7) & Self::NOT_FILE_H.0)
     }
 
     pub fn occupied(&self) -> u8 {
@@ -153,67 +90,8 @@ impl Board {
         }
     }
 
-    pub fn south_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen >> 8);
-        prop &= prop >> 8;
-        gen |= prop & (gen >> 16);
-        prop &= prop >> 16;
-        gen |= prop & (gen >> 32);
-
-        Self(gen >> 8)
-    }
-
-    pub fn south_east_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_A.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen >> 7);
-        prop &= prop >> 7;
-        gen |= prop & (gen >> 14);
-        prop &= prop >> 14;
-        gen |= prop & (gen >> 28);
-
-        Self((gen >> 7) & Self::NOT_FILE_A.0)
-    }
-
-    pub fn south_west_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen >> 9);
-        prop &= prop >> 9;
-        gen |= prop & (gen >> 18);
-        prop &= prop >> 18;
-        gen |= prop & (gen >> 36);
-
-        Self((gen >> 9) & Self::NOT_FILE_H.0)
-    }
-
-    pub fn straight_attacks(&self, empty_squares: &Self) -> Self {
-        self.north_attacks(empty_squares)
-            | self.south_attacks(empty_squares)
-            | self.east_attacks(empty_squares)
-            | self.west_attacks(empty_squares)
-    }
-
     pub fn to_square(&self) -> Square {
         Square(self.0.trailing_zeros() as u8)
-    }
-
-    pub fn west_attacks(&self, empty_squares: &Self) -> Self {
-        let mut prop = empty_squares.0 & Self::NOT_FILE_H.0;
-        let mut gen = self.0;
-
-        gen |= prop & (gen >> 1);
-        prop &= prop >> 1;
-        gen |= prop & (gen >> 2);
-        prop &= prop >> 2;
-        gen |= prop & (gen >> 4);
-
-        Self((gen >> 1) & Self::NOT_FILE_H.0)
     }
 }
 
@@ -274,6 +152,22 @@ impl Not for Board {
 
     fn not(self) -> Self::Output {
         Board(!self.0)
+    }
+}
+
+impl Shr<u8> for Board {
+    type Output = Board;
+
+    fn shr(self, amount: u8) -> Board {
+        Board(self.0 >> amount)
+    }
+}
+
+impl Shl<u8> for Board {
+    type Output = Board;
+
+    fn shl(self, amount: u8) -> Board {
+        Board(self.0 << amount)
     }
 }
 
