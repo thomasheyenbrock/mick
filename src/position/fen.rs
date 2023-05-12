@@ -1,3 +1,4 @@
+use super::Position;
 use crate::{
     board::EMPTY,
     castle::CastlingRights,
@@ -5,8 +6,6 @@ use crate::{
     side::Side,
     square::Square,
 };
-
-use super::Position;
 
 impl Position {
     pub const STARTING: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

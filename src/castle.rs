@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use crate::side::Side;
+use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Castle(pub u8);

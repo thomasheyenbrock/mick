@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use crate::{castle::Castle, piece::PieceKind, square::Square};
+use std::fmt::Display;
 
 /// The first two bytes of the first number and the first two bytes of the second number encode metadata about the move
 /// that was performed:

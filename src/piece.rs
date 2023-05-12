@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use crate::side::Side;
+use std::fmt::Display;
 
 const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
 

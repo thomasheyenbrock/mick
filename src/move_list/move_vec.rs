@@ -6,15 +6,15 @@ use crate::{
     r#move::Move,
     square::Square,
 };
-use std::fmt;
+use std::fmt::Display;
 
 #[derive(Clone)]
 pub struct MoveVec {
     moves: Vec<Move>,
 }
 
-impl fmt::Display for MoveVec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for MoveVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
