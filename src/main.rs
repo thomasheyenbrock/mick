@@ -1,8 +1,4 @@
-#![feature(int_roundings)]
 #![feature(test)]
-
-#[cfg(test)]
-extern crate test;
 
 mod board;
 mod cache;
@@ -17,13 +13,18 @@ mod side;
 mod square;
 mod utils;
 
-use std::time::Instant;
+extern crate clap;
+extern crate num_cpus;
+extern crate rand;
+#[cfg(test)]
+extern crate test;
+extern crate threadpool;
 
 use clap::{Parser, Subcommand};
-use position::Position;
+pub use perft::perft;
+pub use position::{Position, STARTING_POSITION_FEN};
 use rand::RngCore;
-
-use crate::{perft::perft, position::STARTING_POSITION_FEN};
+use std::time::Instant;
 
 #[derive(Subcommand)]
 enum Commands {
@@ -36,7 +37,6 @@ enum Commands {
     },
 }
 
-/// Simple program to greet a person
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
