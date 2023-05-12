@@ -4,7 +4,7 @@ mod rays;
 use self::consts::{
     DIAGONAL_RAYS, KING_MOVES, KNIGHT_MOVES, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS,
 };
-use crate::board::{Board, FILES};
+use crate::board::{Board, FILE_A};
 use std::fmt::Display;
 
 static NAMES: [&str; 64] = [
@@ -50,7 +50,7 @@ impl Square {
     }
 
     pub fn file_mask(self) -> Board {
-        FILES[self.0 as usize]
+        FILE_A << (self.0 & 7)
     }
 
     pub fn from(rank: u8, file: u8) -> Square {

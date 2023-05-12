@@ -10,31 +10,21 @@ use std::{
 pub struct Board(pub u64);
 
 pub const EMPTY: Board = Board(0x0000_0000_0000_0000);
-
+pub const END_RANKS: Board = Board(RANK_1.0 | RANK_8.0);
 pub const FILE_A: Board = Board(0x0101_0101_0101_0101);
 pub const FILE_B: Board = Board(FILE_A.0 << 1);
 pub const FILE_G: Board = Board(FILE_A.0 << 6);
 pub const FILE_H: Board = Board(FILE_A.0 << 7);
 pub const NOT_FILE_A: Board = Board(!FILE_A.0);
 pub const NOT_FILE_H: Board = Board(!FILE_H.0);
-
 pub const RANK_1: Board = Board(0x0000_0000_0000_00FF);
 pub const RANK_4: Board = Board(RANK_1.0 << (3 * 8));
 pub const RANK_5: Board = Board(RANK_1.0 << (4 * 8));
 pub const RANK_8: Board = Board(RANK_1.0 << (7 * 8));
-pub const END_RANKS: Board = Board(RANK_1.0 | RANK_8.0);
 
 impl Board {
     pub fn any(self) -> bool {
         self.0 != 0
-    }
-
-    pub fn flip_board(&mut self, board: &Self) {
-        self.0 ^= board.0
-    }
-
-    pub fn flip_square(&mut self, square: &Square) {
-        self.0 ^= 1 << square.0
     }
 
     pub fn iter(self) -> BoardIterator {
@@ -45,7 +35,11 @@ impl Board {
         Board(1u64 << square.0)
     }
 
-    pub fn occupied(&self) -> u32 {
+    pub fn none(self) -> bool {
+        self.0 == 0u64
+    }
+
+    pub fn occupied(self) -> u32 {
         self.0.count_ones()
     }
 
@@ -57,7 +51,7 @@ impl Board {
         Board(self.0.rotate_right(amount))
     }
 
-    pub fn to_square(&self) -> Square {
+    pub fn to_square(self) -> Square {
         Square(self.0.trailing_zeros() as u8)
     }
 }
@@ -65,68 +59,52 @@ impl Board {
 impl BitAnd for Board {
     type Output = Board;
 
-    fn bitand(self, rhs: Self) -> Self::Output {
-        Board(self.0 & rhs.0)
+    fn bitand(self, other: Board) -> Board {
+        Board(self.0 & other.0)
     }
 }
 
 impl BitOr for Board {
     type Output = Board;
 
-    fn bitor(self, rhs: Self) -> Self::Output {
-        Board(self.0 | rhs.0)
+    fn bitor(self, other: Board) -> Board {
+        Board(self.0 | other.0)
     }
 }
 
 impl BitOrAssign for Board {
-    fn bitor_assign(&mut self, rhs: Self) {
-        self.0 |= rhs.0;
+    fn bitor_assign(&mut self, other: Board) {
+        self.0 |= other.0
     }
 }
 
 impl BitXor for Board {
     type Output = Board;
 
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        Board(self.0 ^ rhs.0)
+    fn bitxor(self, other: Board) -> Board {
+        Board(self.0 ^ other.0)
     }
 }
 
 impl BitXorAssign for Board {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        self.0 ^= rhs.0
+    fn bitxor_assign(&mut self, other: Board) {
+        self.0 ^= other.0
     }
 }
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(
+        write!(
             f,
             "{}",
-            grid_to_string(|s: Square| -> char {
-                if (self.0 >> s.0) & 1 != 0 {
-                    'X'
+            grid_to_string(|sq: Square| -> char {
+                if (self.0 >> sq.0) & 1 != 0 {
+                    '#'
                 } else {
-                    ' '
+                    '.'
                 }
             })
-        );
-    }
-}
-
-impl Not for Board {
-    type Output = Board;
-
-    fn not(self) -> Self::Output {
-        Board(!self.0)
-    }
-}
-
-impl Shr<u8> for Board {
-    type Output = Board;
-
-    fn shr(self, amount: u8) -> Board {
-        Board(self.0 >> amount)
+        )
     }
 }
 
@@ -138,12 +116,28 @@ impl Shl<u8> for Board {
     }
 }
 
+impl Shr<u8> for Board {
+    type Output = Board;
+
+    fn shr(self, amount: u8) -> Board {
+        Board(self.0 >> amount)
+    }
+}
+
+impl Not for Board {
+    type Output = Board;
+
+    fn not(self) -> Board {
+        Board(!self.0)
+    }
+}
+
 pub struct BoardIterator(Board);
 
 impl Iterator for BoardIterator {
     type Item = (Square, Board);
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<(Square, Board)> {
         let board = self.0;
         if board.0 == EMPTY.0 {
             return None;
@@ -156,107 +150,12 @@ impl Iterator for BoardIterator {
     }
 }
 
-pub static FILES: [Board; 64] = [
-    Board(0x0101_0101_0101_0101), // a1
-    Board(0x0202_0202_0202_0202), // b1
-    Board(0x0404_0404_0404_0404), // c1
-    Board(0x0808_0808_0808_0808), // d1
-    Board(0x1010_1010_1010_1010), // e1
-    Board(0x2020_2020_2020_2020), // f1
-    Board(0x4040_4040_4040_4040), // g1
-    Board(0x8080_8080_8080_8080), // h1
-    Board(0x0101_0101_0101_0101), // a2
-    Board(0x0202_0202_0202_0202), // b2
-    Board(0x0404_0404_0404_0404), // c2
-    Board(0x0808_0808_0808_0808), // d2
-    Board(0x1010_1010_1010_1010), // e2
-    Board(0x2020_2020_2020_2020), // f2
-    Board(0x4040_4040_4040_4040), // g2
-    Board(0x8080_8080_8080_8080), // h2
-    Board(0x0101_0101_0101_0101), // a3
-    Board(0x0202_0202_0202_0202), // b3
-    Board(0x0404_0404_0404_0404), // c3
-    Board(0x0808_0808_0808_0808), // d3
-    Board(0x1010_1010_1010_1010), // e3
-    Board(0x2020_2020_2020_2020), // f3
-    Board(0x4040_4040_4040_4040), // g3
-    Board(0x8080_8080_8080_8080), // h3
-    Board(0x0101_0101_0101_0101), // a4
-    Board(0x0202_0202_0202_0202), // b4
-    Board(0x0404_0404_0404_0404), // c4
-    Board(0x0808_0808_0808_0808), // d4
-    Board(0x1010_1010_1010_1010), // e4
-    Board(0x2020_2020_2020_2020), // f4
-    Board(0x4040_4040_4040_4040), // g4
-    Board(0x8080_8080_8080_8080), // h4
-    Board(0x0101_0101_0101_0101), // a5
-    Board(0x0202_0202_0202_0202), // b5
-    Board(0x0404_0404_0404_0404), // c5
-    Board(0x0808_0808_0808_0808), // d5
-    Board(0x1010_1010_1010_1010), // e5
-    Board(0x2020_2020_2020_2020), // f5
-    Board(0x4040_4040_4040_4040), // g5
-    Board(0x8080_8080_8080_8080), // h5
-    Board(0x0101_0101_0101_0101), // a6
-    Board(0x0202_0202_0202_0202), // b6
-    Board(0x0404_0404_0404_0404), // c6
-    Board(0x0808_0808_0808_0808), // d6
-    Board(0x1010_1010_1010_1010), // e6
-    Board(0x2020_2020_2020_2020), // f6
-    Board(0x4040_4040_4040_4040), // g6
-    Board(0x8080_8080_8080_8080), // h6
-    Board(0x0101_0101_0101_0101), // a7
-    Board(0x0202_0202_0202_0202), // b7
-    Board(0x0404_0404_0404_0404), // c7
-    Board(0x0808_0808_0808_0808), // d7
-    Board(0x1010_1010_1010_1010), // e7
-    Board(0x2020_2020_2020_2020), // f7
-    Board(0x4040_4040_4040_4040), // g7
-    Board(0x8080_8080_8080_8080), // h7
-    Board(0x0101_0101_0101_0101), // a8
-    Board(0x0202_0202_0202_0202), // b8
-    Board(0x0404_0404_0404_0404), // c8
-    Board(0x0808_0808_0808_0808), // d8
-    Board(0x1010_1010_1010_1010), // e8
-    Board(0x2020_2020_2020_2020), // f8
-    Board(0x4040_4040_4040_4040), // g8
-    Board(0x8080_8080_8080_8080), // h8
-];
-
 #[cfg(test)]
 mod tests {
     use crate::{
         board::{Board, EMPTY},
         square::Square,
     };
-
-    #[test]
-    fn flips_board() {
-        let mut board1 = Board(0x0101_0202_0404_0808);
-        let board2 = Board(0x8080_4040_2020_1010);
-        let board3 = Board(0x0101_0202_0404_0808);
-
-        board1.flip_board(&board2);
-        assert_eq!(board1, Board(0x8181_4242_2424_1818));
-
-        board1.flip_board(&board2);
-        assert_eq!(board1, Board(0x0101_0202_0404_0808));
-
-        board1.flip_board(&board3);
-        assert_eq!(board1, EMPTY);
-    }
-
-    #[test]
-    fn flips_square() {
-        let mut board = EMPTY;
-        let a1 = Square(0);
-
-        board.flip_square(&a1);
-        assert_eq!(board, Board(0x0000_0000_0000_0001));
-
-        board.flip_square(&a1);
-        assert_eq!(board, EMPTY);
-    }
 
     #[test]
     fn iterates_over_empty() {

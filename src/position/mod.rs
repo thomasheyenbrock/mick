@@ -40,31 +40,19 @@ impl Position {
         !self.occupied()
     }
 
-    pub fn new(
-        pieces: [Piece; 64],
-        piece_boards: [Board; 12],
-        side_to_move: Side,
-        castling_rights: CastlingRights,
-        en_passant_target: Option<Square>,
-        halfmove_clock: u32,
-        fullmove_number: u32,
-    ) -> Self {
+    pub fn new(pieces: [Piece; 64], state: State) -> Position {
+        let mut piece_boards = [EMPTY; 12];
         let mut side_boards = [EMPTY; 2];
-        for (i, board) in piece_boards.iter().enumerate() {
-            side_boards[i % 2].flip_board(board);
-        }
 
-        let state = State {
-            side_to_move,
-            castling_rights,
-            en_passant_target,
-            halfmove_clock,
-            fullmove_number,
-        };
+        for (idx, pc) in pieces.iter().enumerate().filter(|&(_, &pc)| pc.is_some()) {
+            let bb_mask = Board::new(Square(idx as u8));
+            side_boards[pc.side().0 as usize] |= bb_mask;
+            piece_boards[pc.0 as usize] |= bb_mask;
+        }
 
         let hash = DEFAULT_ZOBRISH_HASH.position(&pieces, &state);
 
-        Self {
+        Position {
             pieces,
             piece_boards,
             side_boards,

@@ -1,8 +1,8 @@
 use super::Position;
 use crate::{
-    board::EMPTY,
     castle::CastlingRights,
     piece::{Piece, NULL_PIECE},
+    position::State,
     side::Side,
     square::Square,
 };
@@ -15,7 +15,6 @@ impl Position {
         assert!(parts.len() == 6, "Invalid FEN {fen}");
 
         let mut pieces = [NULL_PIECE; 64];
-        let mut piece_boards = [EMPTY; 12];
         for (rank_index, rank) in parts[0].split("/").enumerate() {
             let mut file_index = 0;
             for char in rank.chars() {
@@ -23,8 +22,6 @@ impl Position {
                     let square_index = (7 - rank_index) * 8 + file_index;
                     pieces[square_index] = piece;
 
-                    let board = &mut piece_boards[piece.0 as usize];
-                    board.flip_square(&Square(square_index as u8));
                     file_index += 1;
                 } else if let Some(digit) = char.to_digit(10) {
                     file_index += digit as usize;
@@ -34,7 +31,8 @@ impl Position {
             }
         }
 
-        let side = Side::try_from_str(unsafe { parts.get_unchecked(1) }).expect("Invalid FEN");
+        let side_to_move =
+            Side::try_from_str(unsafe { parts.get_unchecked(1) }).expect("Invalid FEN");
         let castling_rights =
             CastlingRights::try_from_str(unsafe { parts.get_unchecked(2) }).expect("Invalid FEN");
         let en_passant_target = Square::try_from_str(unsafe { parts.get_unchecked(3) }).ok();
@@ -51,12 +49,13 @@ impl Position {
 
         Self::new(
             pieces,
-            piece_boards,
-            side,
-            castling_rights,
-            en_passant_target,
-            halfmove_clock,
-            fullmove_number,
+            State {
+                side_to_move,
+                castling_rights,
+                en_passant_target,
+                halfmove_clock,
+                fullmove_number,
+            },
         )
     }
 
