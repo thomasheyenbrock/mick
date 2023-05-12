@@ -1,4 +1,5 @@
 mod consts;
+mod rays;
 
 use self::consts::{DIAGONAL_RAYS, LINES_ALONG, SQUARES_BETWEEN, STRAIGHT_RAYS};
 use crate::board::{Board, FILES};

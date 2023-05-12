@@ -112,8 +112,8 @@ impl Position {
         let bishop = self.piece_boards[BISHOP.to_piece(self.state.side_to_move).0 as usize];
 
         // Non-pinned straight sliders
-        for (from_board, from) in ((queen | rook) & !pinned).iter() {
-            let attacks = from_board.straight_attacks(&empty_squares);
+        for (_, from) in ((queen | rook) & !pinned).iter() {
+            let attacks = from.straight_attacks(occupied);
             for (_, to) in (attacks & capture_mask).iter() {
                 legal_moves.push(Move::new_capture(from, to));
             }
@@ -123,9 +123,8 @@ impl Position {
         }
 
         // Pinned straight sliders
-        for (from_board, from) in ((queen | rook) & pinned).iter() {
-            let attacks =
-                from_board.straight_attacks(&empty_squares) & from.lines_along(&king_square);
+        for (_, from) in ((queen | rook) & pinned).iter() {
+            let attacks = from.straight_attacks(occupied) & from.lines_along(&king_square);
             for (_, to) in (attacks & capture_mask).iter() {
                 legal_moves.push(Move::new_capture(from, to));
             }
@@ -135,8 +134,8 @@ impl Position {
         }
 
         // Non-pinned diagonal sliders
-        for (from_board, from) in ((queen | bishop) & !pinned).iter() {
-            let attacks = from_board.diagonal_attacks(&empty_squares);
+        for (_, from) in ((queen | bishop) & !pinned).iter() {
+            let attacks = from.diagonal_attacks(occupied);
             for (_, to) in (attacks & capture_mask).iter() {
                 legal_moves.push(Move::new_capture(from, to));
             }
@@ -146,9 +145,8 @@ impl Position {
         }
 
         // Pinned diagonal sliders
-        for (from_board, from) in ((queen | bishop) & pinned).iter() {
-            let attacks =
-                from_board.diagonal_attacks(&empty_squares) & from.lines_along(&king_square);
+        for (_, from) in ((queen | bishop) & pinned).iter() {
+            let attacks = from.diagonal_attacks(occupied) & from.lines_along(&king_square);
             for (_, to) in (attacks & capture_mask).iter() {
                 legal_moves.push(Move::new_capture(from, to));
             }
