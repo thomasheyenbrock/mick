@@ -1,4 +1,9 @@
-use crate::{castle::Castle, piece::PieceKind, square::Square};
+use crate::{
+    castle::{Castle, KING_SIDE, QUEEN_SIDE},
+    piece::{PieceKind, KING, NULL_PIECE, PAWN},
+    square::{Square, C1, C8, E1, E8, G1, G8},
+    Position,
+};
 use std::fmt::Display;
 
 /// The first two bytes of the first number and the first two bytes of the second number encode metadata about the move
@@ -96,6 +101,83 @@ impl Move {
 
     pub fn new_push_promotion(from: Square, to: Square, promote_to: PieceKind) -> Move {
         Move(from.0 | 0b10_000000, to.0 | ((promote_to.0 - 1) << 6))
+    }
+
+    pub fn try_from_str(s: &str, position: &Position) -> Result<Move, String> {
+        let mut chars = s.chars();
+
+        let from_str = format!(
+            "{}{}",
+            chars.next().unwrap_or_default(),
+            chars.next().unwrap_or_default()
+        );
+        let from = match Square::try_from_str(&from_str)? {
+            Some(s) => s,
+            None => return Err(String::from("Missing from square")),
+        };
+
+        let to_str = format!(
+            "{}{}",
+            chars.next().unwrap_or_default(),
+            chars.next().unwrap_or_default()
+        );
+        let to = match Square::try_from_str(&to_str)? {
+            Some(s) => s,
+            None => return Err(String::from("Missing to square")),
+        };
+
+        // Handle castles (king move between very specific squares)
+        let is_king_move = position.at(from) == KING.to_piece(position.state().side_to_move);
+        if is_king_move {
+            if from == E1 {
+                if to == G1 {
+                    return Ok(Move::new_castle(from, to, KING_SIDE));
+                } else if to == C1 {
+                    return Ok(Move::new_castle(from, to, QUEEN_SIDE));
+                }
+            } else if from == E8 {
+                if to == G8 {
+                    return Ok(Move::new_castle(from, to, KING_SIDE));
+                } else if to == C8 {
+                    return Ok(Move::new_castle(from, to, QUEEN_SIDE));
+                }
+            }
+        }
+
+        let is_capture = position.at(to) != NULL_PIECE;
+
+        // Promotions
+        if let Some(c) = chars.next() {
+            let promote_to = PieceKind::try_from_char(c)?;
+            if is_capture {
+                return Ok(Move::new_capture_promotion(from, to, promote_to));
+            } else {
+                return Ok(Move::new_push_promotion(from, to, promote_to));
+            }
+        }
+
+        // Regular captures (excl. en passant)
+        if is_capture {
+            return Ok(Move::new_capture(from, to));
+        }
+
+        // Double pawn push
+        let is_pawn_move = position.at(from) == PAWN.to_piece(position.state().side_to_move);
+        let from_rank = from.rank_index();
+        let to_rank = to.rank_index();
+        if is_pawn_move && ((from_rank == 1 && to_rank == 3) || (from_rank == 6 && to_rank == 4)) {
+            return Ok(Move::new_push_double_pawn(from, to));
+        }
+
+        // En passant capture
+        if let Some(en_passant_target) = position.state().en_passant_target {
+            if is_pawn_move && to == en_passant_target {
+                return Ok(Move::new_capture_en_passant(from, to));
+            }
+        }
+
+        // If none of the above was true, the move is just a regular push
+        Ok(Move::new_push(from, to))
     }
 }
 

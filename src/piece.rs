@@ -1,14 +1,31 @@
 use crate::side::Side;
 use std::fmt::Display;
 
-const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PieceKind(pub u8);
+
+pub const KING: PieceKind = PieceKind(0);
+pub const QUEEN: PieceKind = PieceKind(1);
+pub const ROOK: PieceKind = PieceKind(2);
+pub const BISHOP: PieceKind = PieceKind(3);
+pub const KNIGHT: PieceKind = PieceKind(4);
+pub const PAWN: PieceKind = PieceKind(5);
 
 impl PieceKind {
     pub fn to_piece(self, side: Side) -> Piece {
         Piece((self.0 << 1) | side.0)
+    }
+
+    pub fn try_from_char(c: char) -> Result<Self, String> {
+        match c {
+            'K' | 'k' => Ok(KING),
+            'Q' | 'q' => Ok(QUEEN),
+            'R' | 'r' => Ok(ROOK),
+            'B' | 'b' => Ok(BISHOP),
+            'N' | 'n' => Ok(KNIGHT),
+            'P' | 'p' => Ok(PAWN),
+            _ => Err(format!("Invalid piece kind: {}", c)),
+        }
     }
 }
 
@@ -18,15 +35,34 @@ impl Display for PieceKind {
     }
 }
 
-pub const KING: PieceKind = PieceKind(0);
-pub const QUEEN: PieceKind = PieceKind(1);
-pub const ROOK: PieceKind = PieceKind(2);
-pub const BISHOP: PieceKind = PieceKind(3);
-pub const KNIGHT: PieceKind = PieceKind(4);
-pub const PAWN: PieceKind = PieceKind(5);
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Piece(pub u8);
+
+#[cfg(test)]
+pub const WHITE_KING: Piece = Piece(0);
+#[cfg(test)]
+pub const BLACK_KING: Piece = Piece(1);
+#[cfg(test)]
+pub const WHITE_QUEEN: Piece = Piece(2);
+#[cfg(test)]
+pub const BLACK_QUEEN: Piece = Piece(3);
+#[cfg(test)]
+pub const WHITE_ROOK: Piece = Piece(4);
+#[cfg(test)]
+pub const BLACK_ROOK: Piece = Piece(5);
+#[cfg(test)]
+pub const WHITE_BISHOP: Piece = Piece(6);
+#[cfg(test)]
+pub const BLACK_BISHOP: Piece = Piece(7);
+#[cfg(test)]
+pub const WHITE_KNIGHT: Piece = Piece(8);
+#[cfg(test)]
+pub const BLACK_KNIGHT: Piece = Piece(9);
+#[cfg(test)]
+pub const WHITE_PAWN: Piece = Piece(10);
+#[cfg(test)]
+pub const BLACK_PAWN: Piece = Piece(11);
+pub const NULL_PIECE: Piece = Piece(12);
 
 impl Piece {
     pub fn is_slider(&self) -> bool {
@@ -68,37 +104,13 @@ impl Piece {
     }
 }
 
-#[cfg(test)]
-pub const WHITE_KING: Piece = Piece(0);
-#[cfg(test)]
-pub const BLACK_KING: Piece = Piece(1);
-#[cfg(test)]
-pub const WHITE_QUEEN: Piece = Piece(2);
-#[cfg(test)]
-pub const BLACK_QUEEN: Piece = Piece(3);
-#[cfg(test)]
-pub const WHITE_ROOK: Piece = Piece(4);
-#[cfg(test)]
-pub const BLACK_ROOK: Piece = Piece(5);
-#[cfg(test)]
-pub const WHITE_BISHOP: Piece = Piece(6);
-#[cfg(test)]
-pub const BLACK_BISHOP: Piece = Piece(7);
-#[cfg(test)]
-pub const WHITE_KNIGHT: Piece = Piece(8);
-#[cfg(test)]
-pub const BLACK_KNIGHT: Piece = Piece(9);
-#[cfg(test)]
-pub const WHITE_PAWN: Piece = Piece(10);
-#[cfg(test)]
-pub const BLACK_PAWN: Piece = Piece(11);
-pub const NULL_PIECE: Piece = Piece(12);
-
 impl Display for Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.to_char())
     }
 }
+
+const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
 
 #[cfg(test)]
 mod tests {

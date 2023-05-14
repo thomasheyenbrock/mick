@@ -70,6 +70,10 @@ impl Square {
         }
     }
 
+    pub fn rank_index(self) -> u8 {
+        self.0 >> 3
+    }
+
     pub fn rotate_right(self, amount: u8) -> Square {
         Square((self.0 + (64 - amount)) & 63)
     }

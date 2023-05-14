@@ -3,6 +3,7 @@
 mod board;
 mod cache;
 mod castle;
+mod event_loop;
 mod hash;
 mod r#move;
 mod move_list;
@@ -20,14 +21,17 @@ extern crate test;
 extern crate threadpool;
 
 use clap::{Parser, Subcommand};
+use event_loop::event_loop;
 pub use perft::perft;
 pub use position::{Position, STARTING_POSITION_FEN};
-use std::time::Instant;
+use std::{error::Error, time::Instant};
 
 #[derive(Subcommand)]
 enum Commands {
     /// Run perft on the starting board position
     Perft,
+    /// Start the engine
+    Start,
 }
 
 #[derive(Parser)]
@@ -37,7 +41,7 @@ struct Cli {
     command: Option<Commands>,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -62,6 +66,9 @@ fn main() {
                 move_count, sec, nps
             );
         }
+        Some(Commands::Start) => event_loop()?,
         _ => todo!("not implemented"),
     }
+
+    Ok(())
 }
