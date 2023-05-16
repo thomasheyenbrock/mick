@@ -19,6 +19,7 @@ impl Position {
             side_to_move: WHITE,
             halfmove_clock: 0,
             fullmove_number: 1,
+            prev_hashes: None,
         };
 
         let parts: Vec<&str> = fen.split(' ').collect();
@@ -232,6 +233,7 @@ mod tests {
                     en_passant_target: None,
                     halfmove_clock: 0,
                     fullmove_number: 1,
+                    prev_hashes: None
                 },
                 hash: 1307476362392126559
             }

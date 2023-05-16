@@ -22,6 +22,17 @@ pub struct State {
     pub en_passant_target: Option<Square>,
     pub halfmove_clock: u32,
     pub fullmove_number: u32,
+    /// In the order of moves played, meaning the last number in the list is the hash of the position one move prior
+    pub prev_hashes: Option<Vec<u64>>,
+}
+
+impl State {
+    pub fn track_hashes(&mut self) {
+        if self.prev_hashes.is_none() {
+            // TODO: benchmark the best initial capacity
+            self.prev_hashes = Some(Vec::with_capacity(50));
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

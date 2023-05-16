@@ -84,8 +84,14 @@ impl Position {
 
         if move_resets_half_move_clock {
             self.state.halfmove_clock = 0;
+            if let Some(ref mut prev_hashes) = &mut self.state.prev_hashes {
+                prev_hashes.clear();
+            }
         } else {
             self.state.halfmove_clock += 1;
+            if let Some(ref mut prev_hashes) = &mut self.state.prev_hashes {
+                prev_hashes.push(self.hash);
+            }
         }
 
         xor_key ^= DEFAULT_ZOBRISH_HASH.state(&initial_state, &self.state);
