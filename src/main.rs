@@ -3,7 +3,7 @@
 mod board;
 mod cache;
 mod castle;
-mod event_loop;
+mod engine;
 mod hash;
 mod r#move;
 mod move_list;
@@ -21,7 +21,7 @@ extern crate test;
 extern crate threadpool;
 
 use clap::{Parser, Subcommand};
-use event_loop::event_loop;
+use engine::engine_loop;
 pub use perft::perft;
 pub use position::{Position, STARTING_POSITION_FEN};
 use std::{error::Error, time::Instant};
@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Time: {sec:5} sec");
             println!("NPS: {nps:0}");
         }
-        Some(Commands::Start) => event_loop()?,
+        Some(Commands::Start) => engine_loop()?,
         _ => todo!("not implemented"),
     }
 

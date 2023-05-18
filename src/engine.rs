@@ -7,7 +7,7 @@ use std::{
 
 use crate::{r#move::Move, Position, STARTING_POSITION_FEN};
 
-pub fn event_loop() -> Result<(), Box<dyn Error>> {
+pub fn engine_loop() -> Result<(), Box<dyn Error>> {
     let mut position = Position::from_fen(STARTING_POSITION_FEN);
     let mut stop: Option<Sender<()>> = None;
 
