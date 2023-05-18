@@ -69,26 +69,29 @@ pub fn event_loop() -> Result<(), Box<dyn Error>> {
                     }
                 }
 
-                let (tx, rx) = channel();
-                stop = Some(tx);
-                let mut position = position.clone();
-                spawn(move || {
-                    let (score, line) = position.alphabeta(depth, i32::MIN, i32::MAX);
-                    println!("{score}");
-                    for m in line {
-                        println!("{m}");
-                    }
-                    // TODO: actually do a search here
-                    loop {
-                        match rx.try_recv() {
-                            Ok(_) => {
-                                println!("bestmove e2e4");
-                                break;
-                            }
-                            Err(_) => {}
-                        }
-                    }
-                });
+                if depth > 0 {
+                    let best_move = position.alphabeta(depth, i32::MIN, i32::MAX);
+                    println!("bestmove {best_move}");
+                }
+
+                // let (tx, rx) = channel();
+                // stop = Some(tx);
+                // let mut position = position.clone();
+                // spawn(move || {
+                //     for m in line {
+                //         println!("{m}");
+                //     }
+                //     // TODO: actually do a search here
+                //     loop {
+                //         match rx.try_recv() {
+                //             Ok(_) => {
+                //                 println!("bestmove e2e4");
+                //                 break;
+                //             }
+                //             Err(_) => {}
+                //         }
+                //     }
+                // });
             }
             Some("stop") => {
                 stop.clone().map(|tx| tx.send(()));

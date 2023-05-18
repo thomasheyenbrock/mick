@@ -1,4 +1,7 @@
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    time::Instant,
+};
 
 use crate::{
     move_list::move_vec::MoveVec,
@@ -11,8 +14,43 @@ use crate::{
     Position,
 };
 
+#[derive(Debug, Default)]
+struct Stats {
+    nodes: u64,
+}
+
 impl Position {
-    pub fn alphabeta(&mut self, depth: u8, mut alpha: i32, mut beta: i32) -> (i32, Vec<Move>) {
+    pub fn alphabeta(&mut self, depth: u8, alpha: i32, beta: i32) -> Move {
+        let mut stats = Stats::default();
+
+        let start = Instant::now();
+        let (score, line) = self.alphabeta_with_stats(depth, alpha, beta, &mut stats);
+        let duration = start.elapsed().as_millis();
+
+        let nodes = stats.nodes;
+        let nps = (stats.nodes as f64 / (duration as f64 / 1000f64)) as u64;
+
+        println!(
+            "info depth {depth} time {duration} nodes {nodes} nps {nps} score cp {score} pv {}",
+            line.iter()
+                .rev()
+                .map(|m| format!("{}", m))
+                .collect::<Vec<String>>()
+                .join(" ")
+        );
+
+        *line.last().unwrap()
+    }
+
+    fn alphabeta_with_stats(
+        &mut self,
+        depth: u8,
+        mut alpha: i32,
+        mut beta: i32,
+        stats: &mut Stats,
+    ) -> (i32, Vec<Move>) {
+        stats.nodes += 1;
+
         let (evaluation, moves) = self.evaluate();
         if depth == 0 || moves.is_none() {
             return (evaluation, vec![]);
@@ -29,7 +67,8 @@ impl Position {
                 let hash = self.hash;
                 let capture = self.make(*m);
 
-                let (move_value, mut line) = self.alphabeta(depth - 1, alpha, beta);
+                let (move_value, mut line) =
+                    self.alphabeta_with_stats(depth - 1, alpha, beta, stats);
                 if move_value > value {
                     value = move_value;
                     best_line = {
@@ -57,7 +96,8 @@ impl Position {
                 let hash = self.hash;
                 let capture = self.make(*m);
 
-                let (move_value, mut line) = self.alphabeta(depth - 1, alpha, beta);
+                let (move_value, mut line) =
+                    self.alphabeta_with_stats(depth - 1, alpha, beta, stats);
                 if move_value < value {
                     value = move_value;
                     best_line = {
