@@ -22,15 +22,15 @@ pub fn perft(
     }
 
     if depth <= 3 {
-        return perft_inner(position, depth);
+        return perft_inner(position, depth, true);
     }
 
     if !multi_threading_enabled {
         if cache_bytes_per_thread > 0 {
             let mut cache = Cache::new(cache_bytes_per_thread).unwrap();
-            return perft_with_cache_inner(position, depth, &mut cache);
+            return perft_with_cache_inner(position, depth, &mut cache, true);
         } else {
-            return perft_inner(position, depth);
+            return perft_inner(position, depth, true);
         }
     }
 
@@ -41,20 +41,22 @@ pub fn perft(
     position.legal_moves(&mut moves);
     let moves_len = moves.len();
 
-    for &mv in moves.iter() {
+    for &m in moves.iter() {
         let tx = tx.clone();
         let mut position_local = position.clone();
 
         pool.execute(move || {
-            position_local.make(mv);
+            position_local.make(m);
 
             let count: u64;
             if cache_bytes_per_thread > 0 {
                 let mut cache = Cache::new(cache_bytes_per_thread).unwrap();
-                count = perft_with_cache_inner(&mut position_local, depth - 1, &mut cache);
+                count = perft_with_cache_inner(&mut position_local, depth - 1, &mut cache, false);
             } else {
-                count = perft_inner(&mut position_local, depth - 1);
+                count = perft_inner(&mut position_local, depth - 1, false);
             }
+
+            println!("{m}: {count}");
 
             tx.send(count).unwrap();
         });
@@ -63,8 +65,8 @@ pub fn perft(
     return rx.iter().take(moves_len).sum();
 }
 
-pub fn perft_inner(position: &mut Position, depth: usize) -> u64 {
-    if depth == 1 {
+fn perft_inner(position: &mut Position, depth: usize, should_print: bool) -> u64 {
+    if depth == 1 && !should_print {
         let mut counter = MoveCounter::new();
         position.legal_moves(&mut counter);
         return counter.moves;
@@ -75,19 +77,28 @@ pub fn perft_inner(position: &mut Position, depth: usize) -> u64 {
 
     let state = position.state().clone();
     let hash = position.hash();
-    let mut count = 0;
-    for &mv in moves.iter() {
-        let capture = position.make(mv);
+    let mut total = 0;
+    for &m in moves.iter() {
+        let capture = position.make(m);
 
-        count += perft_inner(position, depth - 1);
+        let count = perft_inner(position, depth - 1, false);
+        if should_print {
+            println!("{m}: {count}");
+        }
+        total += count;
 
-        position.unmake(mv, capture, &state, hash);
+        position.unmake(m, capture, &state, hash);
     }
 
-    count
+    total
 }
 
-fn perft_with_cache_inner(position: &mut Position, depth: usize, cache: &mut Cache) -> u64 {
+fn perft_with_cache_inner(
+    position: &mut Position,
+    depth: usize,
+    cache: &mut Cache,
+    should_print: bool,
+) -> u64 {
     let hash = position.hash();
 
     let result = cache.probe(hash, depth);
@@ -95,29 +106,33 @@ fn perft_with_cache_inner(position: &mut Position, depth: usize, cache: &mut Cac
         return value;
     }
 
-    let mut count = 0;
-    if depth == 1 {
+    let mut total = 0;
+    if depth == 1 && !should_print {
         let mut counter = MoveCounter::new();
         position.legal_moves(&mut counter);
-        count = counter.moves as u64;
+        total = counter.moves as u64;
     } else {
         let mut moves = MoveVec::new();
         position.legal_moves(&mut moves);
 
         let state = position.state().clone();
         let hash = position.hash();
-        for &mv in moves.iter() {
-            let capture = position.make(mv);
+        for &m in moves.iter() {
+            let capture = position.make(m);
 
-            count += perft_with_cache_inner(position, depth - 1, cache);
+            let count = perft_with_cache_inner(position, depth - 1, cache, false);
+            if should_print {
+                println!("{m}: {count}");
+            }
+            total += count;
 
-            position.unmake(mv, capture, &state, hash);
+            position.unmake(m, capture, &state, hash);
         }
     }
 
-    cache.save(hash, count, depth as i16);
+    cache.save(hash, total, depth as i16);
 
-    count
+    total
 }
 
 #[cfg(test)]
