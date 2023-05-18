@@ -128,6 +128,8 @@ impl Display for Position {
                     ' '
                 }
             },
+            None,
+            None,
             props.as_slice(),
         );
 

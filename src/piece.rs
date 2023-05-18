@@ -75,6 +75,10 @@ impl Piece {
         CHARS[self.0 as usize]
     }
 
+    pub fn to_symbol(&self) -> char {
+        SYMBOLS[self.0 as usize]
+    }
+
     pub fn try_from_char(c: char) -> Result<Piece, String> {
         match c {
             'K' => Ok(Piece(0)),
@@ -100,7 +104,13 @@ impl Display for Piece {
     }
 }
 
-const CHARS: [char; 12] = ['K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p'];
+const CHARS: [char; 13] = [
+    'K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p', ' ',
+];
+
+const SYMBOLS: [char; 13] = [
+    '♔', '♚', '♕', '♛', '♖', '♜', '♗', '♝', '♘', '♞', '♙', '♟', ' ',
+];
 
 #[cfg(test)]
 mod tests {

@@ -9,6 +9,7 @@ mod r#move;
 mod move_list;
 mod perft;
 mod piece;
+mod play;
 mod position;
 mod side;
 mod square;
@@ -20,11 +21,18 @@ extern crate num_cpus;
 extern crate test;
 extern crate threadpool;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+use crossterm::{
+    cursor,
+    terminal::{disable_raw_mode, enable_raw_mode},
+    ExecutableCommand,
+};
 use engine::engine_loop;
 pub use perft::perft;
+use play::Game;
 pub use position::{Position, STARTING_POSITION_FEN};
-use std::{error::Error, time::Instant};
+use side::{Side, BLACK, WHITE};
+use std::{error::Error, fmt::Display, io::stdout, time::Instant};
 
 #[derive(Subcommand)]
 enum Commands {
@@ -32,6 +40,11 @@ enum Commands {
     Perft(PerftArgs),
     /// Start the engine
     Start,
+    /// Play a game against the engine
+    Play {
+        #[arg(long, default_value_t = SideEnum::White)]
+        side: SideEnum,
+    },
 }
 
 #[derive(clap::Args)]
@@ -41,6 +54,30 @@ struct PerftArgs {
 
     #[arg(long)]
     fen: Option<String>,
+}
+
+#[derive(Clone, ValueEnum)]
+enum SideEnum {
+    White,
+    Black,
+}
+
+impl Display for SideEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::White => write!(f, "white"),
+            Self::Black => write!(f, "black"),
+        }
+    }
+}
+
+impl SideEnum {
+    fn to_side(self) -> Side {
+        match self {
+            Self::White => WHITE,
+            Self::Black => BLACK,
+        }
+    }
 }
 
 #[derive(Parser)]
@@ -71,6 +108,17 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("NPS: {nps:0}");
         }
         Some(Commands::Start) => engine_loop()?,
+        Some(Commands::Play { side }) => {
+            let mut stdout = stdout();
+
+            enable_raw_mode()?;
+            stdout.execute(cursor::Hide)?;
+
+            let _ = Game::new(side.to_side()).play();
+
+            disable_raw_mode()?;
+            stdout.execute(cursor::Show)?;
+        }
         _ => todo!("not implemented"),
     }
 

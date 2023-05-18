@@ -20,5 +20,6 @@ opt-level = 1
 
 [dependencies]
 clap = { version = "4.2.5", features = ["derive"] }
+crossterm = "0.26.1"
 num_cpus = "1.15.0"
 threadpool = "1.8.1"
