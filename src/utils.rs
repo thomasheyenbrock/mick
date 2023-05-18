@@ -15,11 +15,11 @@ pub fn grid_to_string_with_props<F: Fn(Square) -> char>(
         printed.push_str(&rank_index.to_string());
         printed.push_str(" ");
         for file_index in 0..8 {
-            printed.push_str("| ");
+            printed.push_str("│ ");
             printed.push(char_at(Square::from(rank_index - 1, file_index)));
             printed.push_str(" ");
         }
-        printed.push_str("|");
+        printed.push_str("│");
 
         if props.len() > 8 - rank_index as usize {
             printed.push_str(&format!(
