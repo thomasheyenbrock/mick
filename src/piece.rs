@@ -42,25 +42,15 @@ pub struct Piece(pub u8);
 pub const WHITE_KING: Piece = Piece(0);
 #[cfg(test)]
 pub const BLACK_KING: Piece = Piece(1);
-#[cfg(test)]
 pub const WHITE_QUEEN: Piece = Piece(2);
-#[cfg(test)]
 pub const BLACK_QUEEN: Piece = Piece(3);
-#[cfg(test)]
 pub const WHITE_ROOK: Piece = Piece(4);
-#[cfg(test)]
 pub const BLACK_ROOK: Piece = Piece(5);
-#[cfg(test)]
 pub const WHITE_BISHOP: Piece = Piece(6);
-#[cfg(test)]
 pub const BLACK_BISHOP: Piece = Piece(7);
-#[cfg(test)]
 pub const WHITE_KNIGHT: Piece = Piece(8);
-#[cfg(test)]
 pub const BLACK_KNIGHT: Piece = Piece(9);
-#[cfg(test)]
 pub const WHITE_PAWN: Piece = Piece(10);
-#[cfg(test)]
 pub const BLACK_PAWN: Piece = Piece(11);
 pub const NULL_PIECE: Piece = Piece(12);
 

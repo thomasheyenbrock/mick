@@ -1,14 +1,14 @@
 use std::{
     error::Error,
     io::stdin,
-    sync::mpsc::{channel, Sender, TryRecvError},
+    sync::mpsc::{channel, Sender},
     thread::spawn,
 };
 
 use crate::{r#move::Move, Position, STARTING_POSITION_FEN};
 
 pub fn event_loop() -> Result<(), Box<dyn Error>> {
-    let mut position = None;
+    let mut position = Position::from_fen(STARTING_POSITION_FEN);
     let mut stop: Option<Sender<()>> = None;
 
     loop {
@@ -25,11 +25,11 @@ pub fn event_loop() -> Result<(), Box<dyn Error>> {
                 println!("uciok");
             }
             Some("isready") => println!("readyok"),
-            Some("ucinewgame") => position = None,
+            Some("ucinewgame") => position = Position::from_fen(STARTING_POSITION_FEN),
             Some("position") => {
                 let mut fen = String::from(command_iter.next().unwrap_or_default());
-                if fen == "startpos" {
-                    position = Some(Position::from_fen(STARTING_POSITION_FEN));
+                let mut new_position = if fen == "startpos" {
+                    Position::from_fen(STARTING_POSITION_FEN)
                 } else {
                     let mut next = command_iter.next();
                     while let Some(value) = next {
@@ -40,34 +40,40 @@ pub fn event_loop() -> Result<(), Box<dyn Error>> {
                             next = command_iter.next();
                         }
                     }
-                    position = Position::try_from_fen(&fen).ok();
-                }
+                    Position::try_from_fen(&fen)
+                        .unwrap_or(Position::from_fen(STARTING_POSITION_FEN))
+                };
+                new_position.state_mut().track_hashes();
 
-                if let Some(ref mut position) = position {
-                    for value in command_iter {
-                        if let Ok(m) = Move::try_from_str(value, &position) {
-                            position.make(m);
-                        }
+                for value in command_iter {
+                    if let Ok(m) = Move::try_from_str(value, &new_position) {
+                        new_position.make(m);
                     }
                 }
+
+                position = new_position;
             }
             Some("go") => {
-                if let Some(ref position) = position {
-                    let (tx, rx) = channel();
-                    stop = Some(tx);
-                    spawn(move || {
-                        // TODO: actually do a search here
-                        loop {
-                            match rx.try_recv() {
-                                Ok(_) | Err(TryRecvError::Disconnected) => {
-                                    println!("bestmove e2e4");
-                                    break;
-                                }
-                                Err(TryRecvError::Empty) => {}
+                let (tx, rx) = channel();
+                stop = Some(tx);
+                let mut position = position.clone();
+                spawn(move || {
+                    let (score, line) = position.alphabeta(9, i32::MIN, i32::MAX);
+                    println!("{score}");
+                    for m in line {
+                        println!("{m}");
+                    }
+                    // TODO: actually do a search here
+                    loop {
+                        match rx.try_recv() {
+                            Ok(_) => {
+                                println!("bestmove e2e4");
+                                break;
                             }
+                            Err(_) => {}
                         }
-                    });
-                }
+                    }
+                });
             }
             Some("stop") => {
                 stop.clone().map(|tx| tx.send(()));
@@ -76,11 +82,7 @@ pub fn event_loop() -> Result<(), Box<dyn Error>> {
 
             // Custom commands
             Some("d") => {
-                if let Some(ref position) = position {
-                    println!("{}", position);
-                } else {
-                    println!("No position");
-                }
+                println!("{}", position);
             }
 
             // Ignore everything else

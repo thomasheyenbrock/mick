@@ -1,3 +1,4 @@
+mod evaluate;
 mod fen;
 mod legal_moves;
 mod r#move;
@@ -92,6 +93,10 @@ impl Position {
 
     pub fn state(&self) -> &State {
         &self.state
+    }
+
+    pub fn state_mut(&mut self) -> &mut State {
+        &mut self.state
     }
 }
 
