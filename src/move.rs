@@ -183,29 +183,112 @@ impl Move {
 
 impl Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(castle) = self.castle() {
-            return write!(f, "{}", castle);
-        }
+        write!(
+            f,
+            "{}{}{}",
+            self.from(),
+            self.to(),
+            self.promote_to()
+                .map(|p| p.to_string().to_lowercase())
+                .unwrap_or(String::from(""))
+        )
+    }
+}
 
-        let mut s = String::new();
+#[cfg(test)]
+mod tests {
+    use crate::{
+        castle::{KING_SIDE, QUEEN_SIDE},
+        piece::{BISHOP, KNIGHT, QUEEN, ROOK},
+        r#move::Move,
+        square::Square,
+    };
 
-        s += &self.from().to_string();
+    #[test]
+    fn display() {
+        assert_eq!(
+            format!("{}", Move::new_push(Square(0), Square(1))),
+            String::from("a1b1")
+        );
 
-        if self.is_capture() {
-            s.push('x');
-        }
+        assert_eq!(
+            format!("{}", Move::new_capture(Square(0), Square(1))),
+            String::from("a1b1")
+        );
 
-        s += &self.to().to_string();
+        assert_eq!(
+            format!("{}", Move::new_push_double_pawn(Square(8), Square(24))),
+            String::from("a2a4")
+        );
 
-        if let Some(kind) = self.promote_to() {
-            s.push('=');
-            s.push_str(&format!("{}", kind));
-        }
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_push_promotion(Square(48), Square(56), QUEEN)
+            ),
+            String::from("a7a8q")
+        );
+        assert_eq!(
+            format!("{}", Move::new_push_promotion(Square(48), Square(56), ROOK)),
+            String::from("a7a8r")
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_push_promotion(Square(48), Square(56), BISHOP)
+            ),
+            String::from("a7a8b")
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_push_promotion(Square(48), Square(56), KNIGHT)
+            ),
+            String::from("a7a8n")
+        );
 
-        if self.is_en_passant_capture() {
-            s += "e.p."
-        }
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_capture_promotion(Square(48), Square(57), QUEEN)
+            ),
+            String::from("a7b8q")
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_capture_promotion(Square(48), Square(57), ROOK)
+            ),
+            String::from("a7b8r")
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_capture_promotion(Square(48), Square(57), BISHOP)
+            ),
+            String::from("a7b8b")
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                Move::new_capture_promotion(Square(48), Square(57), KNIGHT)
+            ),
+            String::from("a7b8n")
+        );
 
-        write!(f, "{}", &s)
+        assert_eq!(
+            format!("{}", Move::new_capture_en_passant(Square(32), Square(41))),
+            String::from("a5b6")
+        );
+
+        assert_eq!(
+            format!("{}", Move::new_castle(Square(4), Square(6), KING_SIDE)),
+            String::from("e1g1")
+        );
+
+        assert_eq!(
+            format!("{}", Move::new_castle(Square(4), Square(2), QUEEN_SIDE)),
+            String::from("e1c1")
+        );
     }
 }
