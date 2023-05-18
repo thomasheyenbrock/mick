@@ -54,11 +54,26 @@ pub fn event_loop() -> Result<(), Box<dyn Error>> {
                 position = new_position;
             }
             Some("go") => {
+                let mut depth = 0;
+
+                loop {
+                    let next = command_iter.next();
+                    match next {
+                        Some("depth") => {
+                            depth = command_iter
+                                .next()
+                                .and_then(|d| d.parse().ok())
+                                .unwrap_or(0)
+                        }
+                        _ => break,
+                    }
+                }
+
                 let (tx, rx) = channel();
                 stop = Some(tx);
                 let mut position = position.clone();
                 spawn(move || {
-                    let (score, line) = position.alphabeta(9, i32::MIN, i32::MAX);
+                    let (score, line) = position.alphabeta(depth, i32::MIN, i32::MAX);
                     println!("{score}");
                     for m in line {
                         println!("{m}");
