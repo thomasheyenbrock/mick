@@ -65,14 +65,22 @@ impl Default for MoveVec {
 }
 
 impl MoveVec {
-    pub fn new() -> MoveVec {
-        MoveVec {
-            moves: Vec::with_capacity(60),
-        }
+    pub fn from(&self, s: Square) -> Vec<&Move> {
+        self.moves.iter().filter(|m| m.from() == s).collect()
     }
 
     pub fn iter(&self) -> std::slice::Iter<Move> {
         self.moves.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.moves.len()
+    }
+
+    pub fn new() -> Self {
+        Self {
+            moves: Vec::with_capacity(60),
+        }
     }
 
     fn insert_moves<F: Fn(Square, Square) -> Move>(&mut self, from: Square, targets: Board, f: F) {
@@ -91,10 +99,6 @@ impl MoveVec {
             let from = to.rotate_right(shift);
             self.moves.push(f(from, to));
         }
-    }
-
-    pub fn len(&self) -> usize {
-        self.moves.len()
     }
 
     fn insert_promos_by_shift<F: Fn(Square, Square, PieceKind) -> Move>(

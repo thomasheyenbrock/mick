@@ -94,13 +94,14 @@ impl Display for Board {
             f,
             "{}",
             grid_to_string(
-                |sq: Square| -> char {
+                |sq| {
                     if (self.0 >> sq.0) & 1 != 0 {
-                        '#'
+                        Some('#')
                     } else {
-                        '.'
+                        Some('.')
                     }
                 },
+                None,
                 None,
                 None
             )

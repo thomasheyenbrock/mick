@@ -1,34 +1,37 @@
 use crate::{
-    piece::NULL_PIECE,
-    side::{Side, WHITE},
-    square::Square,
-    utils::grid_to_string,
-    Position, STARTING_POSITION_FEN,
+    move_list::move_vec::MoveVec, piece::NULL_PIECE, side::Side, square::Square,
+    utils::grid_to_string, Position, STARTING_POSITION_FEN,
 };
 use crossterm::{
     cursor,
     event::{self, Event, KeyCode},
     style, terminal, ExecutableCommand, QueueableCommand, Result,
 };
-use std::{
-    error::Error,
-    io::{self, stdout, Stdout, Write},
-};
+use std::io::{stdout, Stdout, Write};
 
 pub struct Game {
     stdout: Stdout,
     side: Side,
     position: Position,
+    legal_moves: MoveVec,
     square: Option<Square>,
     from: Option<Square>,
 }
 
 impl Game {
     pub fn new(side: Side) -> Self {
+        let position = Position::from_fen(STARTING_POSITION_FEN);
+        let mut legal_moves = MoveVec::new();
+
+        if position.state().side_to_move == side {
+            position.legal_moves(&mut legal_moves);
+        }
+
         Self {
             stdout: stdout(),
             side,
-            position: Position::from_fen(STARTING_POSITION_FEN),
+            position,
+            legal_moves,
             square: Some(Square(0)),
             from: None,
         }
@@ -118,7 +121,12 @@ impl Game {
         self.stdout
             .queue(terminal::Clear(terminal::ClearType::All))?;
 
-        let grid = grid_to_string(|s| self.position.at(s).to_symbol(), self.square, self.from);
+        let grid = grid_to_string(
+            |s| self.position.at(s).to_symbol(),
+            self.square,
+            self.from,
+            self.from.map(|s| self.legal_moves.from(s)),
+        );
         for (line, row) in grid.split("\n").enumerate() {
             self.stdout.queue(cursor::MoveTo(0, line as u16))?;
             self.stdout.queue(style::Print(row))?;

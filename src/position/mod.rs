@@ -120,14 +120,15 @@ impl Display for Position {
             ("            hash", format!("{:016X}", self.hash)),
         ];
         let s = grid_to_string_with_props(
-            |s: Square| -> char {
+            |s| {
                 let piece = self.at(s);
                 if piece.is_some() {
-                    piece.to_char()
+                    Some(piece.to_char())
                 } else {
-                    ' '
+                    None
                 }
             },
+            None,
             None,
             None,
             props.as_slice(),

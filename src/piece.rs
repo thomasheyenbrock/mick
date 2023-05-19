@@ -75,8 +75,12 @@ impl Piece {
         CHARS[self.0 as usize]
     }
 
-    pub fn to_symbol(&self) -> char {
-        SYMBOLS[self.0 as usize]
+    pub fn to_symbol(&self) -> Option<char> {
+        if self.0 >= 12 {
+            None
+        } else {
+            Some(SYMBOLS[self.0 as usize])
+        }
     }
 
     pub fn try_from_char(c: char) -> Result<Piece, String> {
@@ -108,9 +112,7 @@ const CHARS: [char; 13] = [
     'K', 'k', 'Q', 'q', 'R', 'r', 'B', 'b', 'N', 'n', 'P', 'p', ' ',
 ];
 
-const SYMBOLS: [char; 13] = [
-    '♔', '♚', '♕', '♛', '♖', '♜', '♗', '♝', '♘', '♞', '♙', '♟', ' ',
-];
+const SYMBOLS: [char; 12] = ['♔', '♚', '♕', '♛', '♖', '♜', '♗', '♝', '♘', '♞', '♙', '♟'];
 
 #[cfg(test)]
 mod tests {

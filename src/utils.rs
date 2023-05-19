@@ -1,4 +1,4 @@
-use crate::square::Square;
+use crate::{r#move::Move, square::Square};
 
 const HORIZONTAL: (&str, &str) = ("───", "━━━");
 const VERTIAL: (char, char) = ('│', '┃');
@@ -44,10 +44,11 @@ fn border(
     printed
 }
 
-pub fn grid_to_string_with_props<F: Fn(Square) -> char>(
+pub fn grid_to_string_with_props<F: Fn(Square) -> Option<char>>(
     char_at: F,
     hovered: Option<Square>,
     selected: Option<Square>,
+    moveable: Option<Vec<&Move>>,
     props: &[(&str, String)],
 ) -> String {
     let mut printed = String::from("    A   B   C   D   E   F   G   H\n");
@@ -87,16 +88,34 @@ pub fn grid_to_string_with_props<F: Fn(Square) -> char>(
                 },
             );
 
-            let (selected_before, selected_after) =
-                if is_selected && selected_file_index == file_index {
-                    // ('•', '•')
-                    ('<', '>')
-                } else {
-                    (' ', ' ')
-                };
-            printed.push(selected_before);
-            printed.push(char_at(Square::from(rank_index - 1, file_index)));
-            printed.push(selected_after);
+            let piece_char = char_at(Square::from(rank_index - 1, file_index)).unwrap_or(' ');
+            let is_moveable = moveable
+                .as_ref()
+                .map(|moves| {
+                    moves
+                        .iter()
+                        .find(|m| {
+                            m.to().rank_index() == rank_index - 1
+                                && m.to().file_index() == file_index
+                        })
+                        .is_some()
+                })
+                .unwrap_or(false);
+
+            let (before, after) = if is_selected && selected_file_index == file_index {
+                ('<', '>')
+            } else if is_moveable && piece_char != ' ' {
+                ('•', '•')
+            } else {
+                (' ', ' ')
+            };
+            printed.push(before);
+            printed.push(if piece_char == ' ' && is_moveable {
+                '•'
+            } else {
+                piece_char
+            });
+            printed.push(after);
         }
         printed.push(if is_hovered && hovered_file_index == 7 {
             VERTIAL.1
@@ -148,10 +167,11 @@ pub fn grid_to_string_with_props<F: Fn(Square) -> char>(
     printed
 }
 
-pub fn grid_to_string<F: Fn(Square) -> char>(
+pub fn grid_to_string<F: Fn(Square) -> Option<char>>(
     char_at: F,
     hovered: Option<Square>,
     selected: Option<Square>,
+    moveable: Option<Vec<&Move>>,
 ) -> String {
-    grid_to_string_with_props(char_at, hovered, selected, &[])
+    grid_to_string_with_props(char_at, hovered, selected, moveable, &[])
 }
