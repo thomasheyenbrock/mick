@@ -49,7 +49,7 @@ pub fn grid_to_string_with_props<F: Fn(Square) -> Option<char>>(
     hovered: Option<Square>,
     selected: Option<Square>,
     moveable: Option<Vec<&Move>>,
-    props: &[(&str, String)],
+    props: &[String],
 ) -> String {
     let mut printed = String::from("    A   B   C   D   E   F   G   H\n");
 
@@ -124,11 +124,7 @@ pub fn grid_to_string_with_props<F: Fn(Square) -> Option<char>>(
         });
 
         if props.len() > 8 - rank_index as usize {
-            printed.push_str(&format!(
-                " {}: {}",
-                props[8 - rank_index as usize].0,
-                props[8 - rank_index as usize].1
-            ));
+            printed.push_str(&props[8 - rank_index as usize]);
         }
         printed.push_str("\n");
 

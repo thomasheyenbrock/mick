@@ -1,7 +1,7 @@
 use crate::{
     board::{Board, EMPTY, NOT_FILE_A, NOT_FILE_H, RANK_4, RANK_5},
     castle::{KING_SIDE, QUEEN_SIDE},
-    move_list::MoveAdder,
+    move_list::{move_vec::MoveVec, MoveAdder},
     piece::{BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK},
     side::{Side, WHITE},
     square::{Square, C1, C8, E1, E8, G1, G8},
@@ -140,6 +140,12 @@ impl Position {
         self.king_moves(king_capture_mask, king_push_mask, list);
 
         king_attacks_count > 0
+    }
+
+    pub fn legal_moves_vec(&self) -> (MoveVec, bool) {
+        let mut list = MoveVec::new();
+        let is_in_check = self.legal_moves(&mut list);
+        (list, is_in_check)
     }
 
     fn castles<L: MoveAdder>(&self, attacked: Board, list: &mut L) {

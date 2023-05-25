@@ -34,7 +34,7 @@ use std::fmt::Display;
 /// The following numbers are missing from the list and thus are invalid:
 /// - 01 10
 /// - 01 11
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(packed(2))] // packed since often stored in transposition tables
 pub struct Move(u8, u8);
 

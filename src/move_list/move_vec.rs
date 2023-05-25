@@ -8,7 +8,13 @@ use crate::{
 };
 use std::fmt::Display;
 
-#[derive(Clone)]
+pub enum FindMoveResult {
+    Move(Move),
+    Promotions([Move; 4]),
+    None,
+}
+
+#[derive(Debug)]
 pub struct MoveVec {
     moves: Vec<Move>,
 }
@@ -58,13 +64,28 @@ impl MoveAdder for MoveVec {
     }
 }
 
-impl Default for MoveVec {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl MoveVec {
+    pub fn find(&self, from: Square, to: Square) -> FindMoveResult {
+        let m = self
+            .moves
+            .iter()
+            .filter(|m| m.from() == from && m.to() == to)
+            .collect::<Vec<&Move>>();
+        match m.len() {
+            0 => FindMoveResult::None,
+            1 => FindMoveResult::Move(unsafe { **m.get_unchecked(0) }),
+            4 => FindMoveResult::Promotions(unsafe {
+                [
+                    **m.get_unchecked(0),
+                    **m.get_unchecked(1),
+                    **m.get_unchecked(2),
+                    **m.get_unchecked(3),
+                ]
+            }),
+            _ => unreachable!("Found multiple moves"),
+        }
+    }
+
     pub fn from(&self, s: Square) -> Vec<&Move> {
         self.moves.iter().filter(|m| m.from() == s).collect()
     }
@@ -110,9 +131,9 @@ impl MoveVec {
         for (to, _) in targets.iter() {
             let from = to.rotate_right(shift);
             self.moves.push(f(from, to, QUEEN));
-            self.moves.push(f(from, to, KNIGHT));
-            self.moves.push(f(from, to, BISHOP));
             self.moves.push(f(from, to, ROOK));
+            self.moves.push(f(from, to, BISHOP));
+            self.moves.push(f(from, to, KNIGHT));
         }
     }
 }

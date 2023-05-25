@@ -1,18 +1,60 @@
-use std::{
-    cmp::{max, min},
-    time::Instant,
-};
-
 use crate::{
-    move_list::move_vec::MoveVec,
     piece::{
         BLACK_BISHOP, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP,
         WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK,
     },
     r#move::Move,
-    side::WHITE,
+    side::{Side, WHITE},
     Position,
 };
+use std::{
+    cmp::{max, min},
+    fmt::Display,
+    time::Instant,
+};
+
+#[derive(Debug, PartialEq)]
+pub enum DrawReason {
+    FiftyMoveRule,
+    InsufficientMaterial,
+    Stalemate,
+    ThreefoldRepetition,
+}
+
+impl Display for DrawReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::FiftyMoveRule => write!(f, "Fifty moves without pawn move or capture"),
+            Self::InsufficientMaterial => write!(f, "Insufficient material"),
+            Self::Stalemate => write!(f, "Stalemate"),
+            Self::ThreefoldRepetition => write!(f, "Repetition of moves"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Evaluation {
+    Win(Side),
+    Draw(DrawReason),
+    None(i32),
+}
+
+impl Evaluation {
+    pub fn is_terminal(&self) -> bool {
+        match self {
+            Self::None(_) => false,
+            _ => true,
+        }
+    }
+
+    pub fn to_score(&self) -> i32 {
+        match self {
+            Self::Win(side) => (1 - 2 * side.0 as i32) * i32::MAX,
+            Self::Draw(_) => 0,
+            Self::None(score) => *score,
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 struct Stats {
@@ -51,18 +93,18 @@ impl Position {
     ) -> (i32, Vec<Move>) {
         stats.nodes += 1;
 
-        let (evaluation, moves) = self.evaluate();
-        if depth == 0 || moves.is_none() {
-            return (evaluation, vec![]);
-        }
+        let (legal_moves, is_in_check) = self.legal_moves_vec();
 
-        let moves = unsafe { moves.unwrap_unchecked() };
+        let evaluation = self.evaluate(legal_moves.len(), is_in_check);
+        if depth == 0 || evaluation.is_terminal() {
+            return (evaluation.to_score(), vec![]);
+        }
 
         if self.state.side_to_move == WHITE {
             let mut value = i32::MIN;
             let mut best_line = vec![];
 
-            for m in moves.iter() {
+            for m in legal_moves.iter() {
                 let state = self.state.clone();
                 let hash = self.hash;
                 let capture = self.make(*m);
@@ -91,7 +133,7 @@ impl Position {
             let mut value = i32::MAX;
             let mut best_line = vec![];
 
-            for m in moves.iter() {
+            for m in legal_moves.iter() {
                 let state = self.state.clone();
                 let hash = self.hash;
                 let capture = self.make(*m);
@@ -118,24 +160,21 @@ impl Position {
         }
     }
 
-    pub fn evaluate(&self) -> (i32, Option<MoveVec>) {
-        let mut m = MoveVec::new();
-        let is_in_check = self.legal_moves(&mut m);
-
-        if m.len() == 0 {
+    pub fn evaluate(&self, legal_move_count: usize, is_in_check: bool) -> Evaluation {
+        if legal_move_count == 0 {
             // The side to move has no legal moves left
             if is_in_check {
                 // Checkmate
-                return ((1 - 2 * self.state.side_to_move.0 as i32) * i32::MAX, None);
+                return Evaluation::Win(self.state.side_to_move);
             }
 
             // Stalemate
-            return (0, None);
+            return Evaluation::Draw(DrawReason::Stalemate);
         }
 
         // Fifty move rule
         if self.state.halfmove_clock >= 50 {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::FiftyMoveRule);
         }
 
         let white_queens = self.piece(WHITE_QUEEN).occupied();
@@ -165,21 +204,21 @@ impl Position {
 
         // Insufficient material (king vs. king)
         if score_white == 0 && score_black == 0 {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Insufficient material (king vs. king & bishop)
         let black_has_only_bishops =
             black_pawns == 0 && black_knights == 0 && black_rooks == 0 && black_queens == 0;
         if score_white == 0 && black_has_only_bishops && black_bishops == 1 {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Insufficient material (king & bishop vs. king)
         let white_has_only_bishops =
             white_pawns == 0 && white_knights == 0 && white_rooks == 0 && white_queens == 0;
         if score_black == 0 && white_has_only_bishops && white_bishops == 1 {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Insufficient material (king vs. king & knight)
@@ -190,7 +229,7 @@ impl Position {
             && black_rooks == 0
             && black_queens == 0
         {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Insufficient material (king & knight vs. king)
@@ -201,7 +240,7 @@ impl Position {
             && white_rooks == 0
             && white_queens == 0
         {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Insufficient material (king & bishop vs. king & bishop on same colors)
@@ -217,7 +256,7 @@ impl Position {
                 is_white_bishop_on_white_square == is_black_bishop_on_white_square
             }
         {
-            return (0, None);
+            return Evaluation::Draw(DrawReason::InsufficientMaterial);
         }
 
         // Threefold repetition
@@ -231,7 +270,7 @@ impl Position {
                         count += 1;
                     }
                     if count >= 2 {
-                        return (0, None);
+                        return Evaluation::Draw(DrawReason::ThreefoldRepetition);
                     }
                     if index < 2 {
                         break;
@@ -241,6 +280,6 @@ impl Position {
             }
         }
 
-        (score_white - score_black, Some(m))
+        Evaluation::None(score_white - score_black)
     }
 }

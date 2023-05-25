@@ -14,6 +14,8 @@ use crate::{
 };
 use std::fmt::Display;
 
+pub use evaluate::Evaluation;
+
 pub const STARTING_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #[derive(Clone, Debug, PartialEq)]
@@ -103,21 +105,18 @@ impl Position {
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let props = vec![
-            ("    side to move", format!("{}", self.state.side_to_move)),
-            (
-                " castling rights",
-                format!("{}", self.state.castling_rights),
-            ),
-            (
-                "      en-passant",
+            format!("    side to move: {}", self.state.side_to_move),
+            format!(" castling rights: {}", self.state.castling_rights),
+            format!(
+                "      en-passant: {}",
                 self.state
                     .en_passant_target
                     .map_or("-".to_string(), |s| s.to_string()),
             ),
-            (" half-move clock", self.state.halfmove_clock.to_string()),
-            ("full-move number", self.state.fullmove_number.to_string()),
-            ("             FEN", self.to_fen()),
-            ("            hash", format!("{:016X}", self.hash)),
+            format!(" half-move clock: {}", self.state.halfmove_clock),
+            format!("full-move number: {}", self.state.fullmove_number),
+            format!("             FEN: {}", self.to_fen()),
+            format!("            hash: {:016X}", self.hash),
         ];
         let s = grid_to_string_with_props(
             |s| {

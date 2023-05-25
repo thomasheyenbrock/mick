@@ -22,4 +22,5 @@ opt-level = 1
 clap = { version = "4.2.5", features = ["derive"] }
 crossterm = "0.26.1"
 num_cpus = "1.15.0"
+rand = { version = "0.8.5", features = [] }
 threadpool = "1.8.1"
